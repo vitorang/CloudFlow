@@ -1,0 +1,24 @@
+name: cloudflow
+
+services:
+  api:
+    container_name: cloudflow-api
+    image: ${DOCKER_REGISTRY-}api
+    build:
+      context: .
+      dockerfile: CloudFlow.Api/Dockerfile
+    networks:
+      - cloudflow-network
+
+  workers:
+    container_name: cloudflow-workers
+    image: ${DOCKER_REGISTRY-}workers
+    build:
+      context: .
+      dockerfile: CloudFlow.Workers.Aws/Dockerfile
+    networks:
+      - cloudflow-network
+
+networks:
+  cloudflow-network:
+    driver: bridge
