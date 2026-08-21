@@ -1,5 +1,6 @@
-using CloudFlow.Core.Interfaces.Services;
-using CloudFlow.Core.Services;
+using CloudFlow.Core.Extensions;
+using CloudFlow.Infrastructure.Aws.Extensions;
+
 
 namespace CloudFlow.Api;
 
@@ -33,7 +34,8 @@ public class Program
         });
 
         builder.Services.AddOpenApi();
-        builder.Services.AddSingleton<IMessageService, MessageService>();
+        builder.Services.AddCoreServices();
+        builder.Services.AddAwsInfrastructure(builder.Configuration);
 
         var app = builder.Build();
 

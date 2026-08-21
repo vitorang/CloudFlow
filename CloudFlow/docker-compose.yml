@@ -19,6 +19,21 @@ services:
     networks:
       - cloudflow-network
 
+  dynamodb:
+    container_name: cloudflow-dynamodb
+    image: amazon/dynamodb-local:3.3.1
+    user: root
+    command: "-jar DynamoDBLocal.jar -sharedDb -dbPath ./data"
+    working_dir: /home/dynamodblocal
+    volumes:
+      - dynamodb-data:/home/dynamodblocal/data
+    networks:
+      - cloudflow-network
+
+volumes:
+  dynamodb-data:
+
 networks:
   cloudflow-network:
     driver: bridge
+

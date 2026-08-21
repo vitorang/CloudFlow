@@ -6,3 +6,4 @@
 - **IDs**: Usar ULID em formato `string` para identificadores únicos.
 - **Configurações sem fallback**: Não usar valores fallback/default para ler configurações. Se faltar configuração, lançar exceção / fail-fast.
 - **Fail-fast**: Optar por fail-fast em vez de usar blocos try-catch desnecessários.
+- **Primary Constructors**: Usar Primary Constructors do C# moderno para injeção de dependências em classes (evitar campos privados com `_` e construtores tradicionais com atribuição manual).

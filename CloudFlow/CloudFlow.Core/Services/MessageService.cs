@@ -1,36 +1,27 @@
-using System.Collections.Concurrent;
 using CloudFlow.Core.Dtos;
-using CloudFlow.Core.Entities;
 using CloudFlow.Core.Extensions;
+using CloudFlow.Core.Interfaces.Repositories;
 using CloudFlow.Core.Interfaces.Services;
 
 namespace CloudFlow.Core.Services;
 
-public class MessageService : IMessageService
+public class MessageService(IMessageRepository messageRepository) : IMessageService
 {
     private const int RecentMessagesLimit = 5;
-    private static readonly ConcurrentBag<Message> Messages = new();
 
-    public Task Create(CreateMessageDto dto, CancellationToken cancellationToken)
+    public async Task Create(CreateMessageDto dto, CancellationToken cancellationToken)
     {
-        cancellationToken.ThrowIfCancellationRequested();
-
         var message = dto.ToEntity();
-        Messages.Add(message);
-
-        return Task.CompletedTask;
+        await messageRepository.Create(message, cancellationToken);
     }
 
-    public Task<IReadOnlyList<MessageResponseDto>> GetRecent(CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<MessageResponseDto>> GetRecent(CancellationToken cancellationToken)
     {
-        cancellationToken.ThrowIfCancellationRequested();
+        var messages = await messageRepository.GetRecent(RecentMessagesLimit, cancellationToken);
 
-        IReadOnlyList<MessageResponseDto> recentMessages = Messages
-            .OrderByDescending(m => m.CreatedAt)
-            .Take(RecentMessagesLimit)
+        return messages
             .Select(m => m.ToResponseDto())
             .ToList();
-
-        return Task.FromResult(recentMessages);
     }
 }
+

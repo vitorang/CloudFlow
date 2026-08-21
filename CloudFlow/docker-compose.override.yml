@@ -25,3 +25,7 @@ services:
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
     ports:
       - "9000:8080"
+
+  dynamodb:
+    ports:
+      - "8000:8000"
