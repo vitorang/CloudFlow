@@ -11,6 +11,16 @@ public class Program
 
         builder.Services.AddAWSLambdaHosting(LambdaEventSource.HttpApi);
 
+        builder.Services.AddCors(options =>
+        {
+            options.AddDefaultPolicy(policy =>
+            {
+                policy.AllowAnyOrigin()
+                      .AllowAnyHeader()
+                      .AllowAnyMethod();
+            });
+        });
+
         builder.Services.AddControllers();
 
         builder.Services.AddProblemDetails(options =>
@@ -27,6 +37,7 @@ public class Program
 
         var app = builder.Build();
 
+        app.UseCors();
         app.UseExceptionHandler();
         app.UseStatusCodePages();
 
