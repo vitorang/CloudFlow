@@ -8,7 +8,7 @@ public class Program
     {
         var builder = Host.CreateApplicationBuilder(args);
         builder.Services.AddAwsInfrastructure(builder.Configuration);
-        builder.Services.AddHostedService<Worker>();
+        builder.Services.AddScoped<DynamoDbStreams.MessageStreamHandler>();
 
         var host = builder.Build();
         host.Run();

@@ -1,11 +1,12 @@
 using CloudFlow.Core.Dtos;
+using CloudFlow.Infrastructure.Aws.Configuration;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CloudFlow.Api.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class ConfigController : ControllerBase
+public class ConfigController(AwsOptions awsOptions) : ControllerBase
 {
     [HttpGet]
     public ActionResult<AppConfigDto> Get()
@@ -16,7 +17,7 @@ public class ConfigController : ControllerBase
         var config = new AppConfigDto(
             Name: "CloudFlow",
             ApiUrl: apiUrl,
-            WebSocketUrl: string.Empty
+            WebSocketUrl: awsOptions.WebSocket.PublicUrl
         );
 
         return Ok(config);

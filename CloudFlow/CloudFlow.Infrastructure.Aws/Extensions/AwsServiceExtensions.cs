@@ -1,6 +1,8 @@
+using System.Text.Json;
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DataModel;
 using Amazon.Runtime;
+using CloudFlow.Infrastructure.Aws.Configuration;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -10,37 +12,63 @@ public static class AwsServiceExtensions
 {
     public static IServiceCollection AddAwsInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        var serviceUrl = configuration["AWS:DynamoDB:ServiceUrl"];
-        var region = configuration["AWS_REGION"] 
-            ?? configuration["AWS:Region"] 
-            ?? throw new InvalidOperationException("Configuração AWS_REGION não foi definida.");
+        var awsOptions = BuildAwsOptions(configuration);
 
-        var accessKey = configuration["AWS_ACCESS_KEY_ID"] 
-            ?? configuration["AWS:AccessKey"] 
-            ?? throw new InvalidOperationException("Configuração AWS_ACCESS_KEY_ID não foi definida.");
-
-        var secretKey = configuration["AWS_SECRET_ACCESS_KEY"] 
-            ?? configuration["AWS:SecretKey"] 
-            ?? throw new InvalidOperationException("Configuração AWS_SECRET_ACCESS_KEY não foi definida.");
+        services.AddSingleton(awsOptions);
 
         var dynamoConfig = new AmazonDynamoDBConfig
         {
-            AuthenticationRegion = region
+            AuthenticationRegion = awsOptions.Region,
+            ServiceURL = awsOptions.DynamoDB.ServiceUrl
         };
 
-        if (!string.IsNullOrWhiteSpace(serviceUrl))
-        {
-            dynamoConfig.ServiceURL = serviceUrl;
-        }
-
-        var credentials = new BasicAWSCredentials(accessKey, secretKey);
+        var credentials = new BasicAWSCredentials(awsOptions.AccessKey, awsOptions.SecretKey);
 
         services.AddSingleton<IAmazonDynamoDB>(new AmazonDynamoDBClient(credentials, dynamoConfig));
         services.AddSingleton<IDynamoDBContext, DynamoDBContext>();
         services.AddScoped<CloudFlow.Core.Interfaces.Repositories.IMessageRepository, Repositories.DynamoDbMessageRepository>();
-        services.AddHostedService<Initializers.DynamoDbTableInitializer>();
+        services.AddScoped<CloudFlow.Core.Interfaces.Repositories.IWebSocketConnectionRepository, Repositories.DynamoDbWebSocketConnectionRepository>();
+
+        var wsConfig = new Amazon.ApiGatewayManagementApi.AmazonApiGatewayManagementApiConfig
+        {
+            AuthenticationRegion = awsOptions.Region,
+            ServiceURL = awsOptions.WebSocket.ServiceUrl
+        };
+
+        services.AddSingleton<Amazon.ApiGatewayManagementApi.IAmazonApiGatewayManagementApi>(
+            new Amazon.ApiGatewayManagementApi.AmazonApiGatewayManagementApiClient(credentials, wsConfig));
+        services.AddScoped<CloudFlow.Core.Interfaces.Services.IWebSocketNotificationService, Services.ApiGatewayWebSocketNotificationService>();
 
         return services;
+    }
+
+    private static AwsOptions BuildAwsOptions(IConfiguration configuration)
+    {
+        var region = configuration["AWS:Region"]
+            ?? throw new InvalidOperationException("Configuração AWS:Region não foi definida.");
+
+        var accessKey = configuration["AWS:AccessKey"]
+            ?? throw new InvalidOperationException("Configuração AWS:AccessKey não foi definida.");
+
+        var secretKey = configuration["AWS:SecretKey"]
+            ?? throw new InvalidOperationException("Configuração AWS:SecretKey não foi definida.");
+
+        var dynamoServiceUrl = configuration["AWS:DynamoDB:ServiceUrl"]
+            ?? throw new InvalidOperationException("Configuração AWS:DynamoDB:ServiceUrl não foi definida.");
+
+        var wsServiceUrl = configuration["AWS:WebSocket:ServiceUrl"]
+            ?? throw new InvalidOperationException("Configuração AWS:WebSocket:ServiceUrl não foi definida.");
+
+        var wsPublicUrl = configuration["AWS:WebSocket:PublicUrl"]
+            ?? throw new InvalidOperationException("Configuração AWS:WebSocket:PublicUrl não foi definida.");
+
+        return new AwsOptions(
+            Region: region,
+            AccessKey: accessKey,
+            SecretKey: secretKey,
+            DynamoDB: new DynamoDbOptions(dynamoServiceUrl),
+            WebSocket: new WebSocketOptions(wsServiceUrl, wsPublicUrl)
+        );
     }
 }
 

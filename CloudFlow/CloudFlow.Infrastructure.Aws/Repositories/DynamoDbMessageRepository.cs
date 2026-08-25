@@ -32,6 +32,7 @@ public class DynamoDbMessageRepository(IDynamoDBContext context) : IMessageRepos
         return items
             .OrderByDescending(item => item.CreatedAt)
             .Take(limit)
+            .OrderBy(item => item.CreatedAt)
             .Select(item => new Message
             {
                 Id = item.Id,
