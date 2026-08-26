@@ -12,10 +12,7 @@ class WsConnectionConnected extends WsConnectionState {
   final Stream<dynamic> stream;
   final WebSocketSink sink;
 
-  WsConnectionConnected({
-    required this.stream,
-    required this.sink,
-  });
+  WsConnectionConnected({required this.stream, required this.sink});
 }
 
 class WsConnectionDisconnected extends WsConnectionState {
@@ -30,7 +27,8 @@ class ConnectionCubit extends Cubit<WsConnectionState> {
   ConnectionCubit() : super(WsConnectionInitial());
 
   void connect(String webSocketUrl) {
-    if (state is WsConnectionConnected || state is WsConnectionConnecting) return;
+    if (state is WsConnectionConnected || state is WsConnectionConnecting)
+      return;
 
     emit(WsConnectionConnecting());
 
@@ -52,10 +50,7 @@ class ConnectionCubit extends Cubit<WsConnectionState> {
         cancelOnError: true,
       );
 
-      emit(WsConnectionConnected(
-        stream: broadcastStream,
-        sink: channel.sink,
-      ));
+      emit(WsConnectionConnected(stream: broadcastStream, sink: channel.sink));
     } catch (_) {
       _handleDisconnection('Falha ao conectar no WebSocket.');
     }

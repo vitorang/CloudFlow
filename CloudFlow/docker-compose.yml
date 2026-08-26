@@ -7,21 +7,4 @@ services:
     build:
       context: .
       dockerfile: CloudFlow.Api/Dockerfile
-    networks:
-      - cloudflow-network
-
-
-  websocket-emulator:
-    container_name: cloudflow-websocket-emulator
-    build:
-      context: .
-      dockerfile: CloudFlow.Emulator.WebSocket/Dockerfile
-    environment:
-      - API_URL=http://api:8080
-    networks:
-      - cloudflow-network
-
-networks:
-  cloudflow-network:
-    driver: bridge
 

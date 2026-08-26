@@ -3,7 +3,6 @@
   <Project Path="CloudFlow.Core/CloudFlow.Core.csproj" />
   <Project Path="CloudFlow.Infrastructure.Aws/CloudFlow.Infrastructure.Aws.csproj" />
   <Project Path="CloudFlow.Workers.Aws/CloudFlow.Workers.Aws.csproj" />
-  <Project Path="CloudFlow.Emulator.WebSocket/CloudFlow.Emulator.WebSocket.csproj" />
   <Project Path="docker-compose.dcproj">
     <Build />
   </Project>

@@ -1,4 +1,8 @@
+using Amazon.Lambda.Core;
+using Amazon.Lambda.Serialization.SystemTextJson;
 using CloudFlow.Infrastructure.Aws.Extensions;
+
+[assembly: LambdaSerializer(typeof(DefaultLambdaJsonSerializer))]
 
 namespace CloudFlow.Workers.Aws;
 
@@ -9,6 +13,8 @@ public class Program
         var builder = Host.CreateApplicationBuilder(args);
         builder.Services.AddAwsInfrastructure(builder.Configuration);
         builder.Services.AddScoped<DynamoDbStreams.MessageStreamHandler>();
+        builder.Services.AddScoped<WebSocketApi.WebSocketConnectHandler>();
+        builder.Services.AddScoped<WebSocketApi.WebSocketDisconnectHandler>();
 
         var host = builder.Build();
         host.Run();

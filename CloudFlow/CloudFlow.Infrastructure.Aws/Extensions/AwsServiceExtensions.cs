@@ -29,8 +29,7 @@ public static class AwsServiceExtensions
         services.AddSingleton<IAmazonDynamoDB>(new AmazonDynamoDBClient(credentials, dynamoConfig));
         services.AddSingleton<IDynamoDBContext, DynamoDBContext>();
         services.AddScoped<CloudFlow.Core.Interfaces.Repositories.IMessageRepository, Repositories.DynamoDbMessageRepository>();
-        // services.AddScoped<CloudFlow.Core.Interfaces.Repositories.IWebSocketConnectionRepository, Repositories.DynamoDbWebSocketConnectionRepository>();
-        services.AddSingleton<CloudFlow.Core.Interfaces.Repositories.IWebSocketConnectionRepository, Repositories.MemoryWebSocketConnectionRepository>();
+        services.AddScoped<CloudFlow.Core.Interfaces.Repositories.IWebSocketConnectionRepository, Repositories.DynamoDbWebSocketConnectionRepository>();
 
         var wsConfig = new Amazon.ApiGatewayManagementApi.AmazonApiGatewayManagementApiConfig
         {
