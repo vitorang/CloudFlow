@@ -8,6 +8,9 @@ services:
       - AWS__Region=${AWS_REGION}
       - AWS__AccessKey=${AWS_ACCESS_KEY_ID}
       - AWS__SecretKey=${AWS_SECRET_ACCESS_KEY}
+      - AWS__DynamoDB__ServiceUrl=${AWS_DYNAMODB_SERVICE_URL}
+      - AWS__WebSocket__ServiceUrl=${AWS_WEBSOCKET_SERVICE_URL}
+      - AWS__WebSocket__PublicUrl=${AWS_WEBSOCKET_PUBLIC_URL}
     ports:
       - "8080:8080"
       - "8081:8081"

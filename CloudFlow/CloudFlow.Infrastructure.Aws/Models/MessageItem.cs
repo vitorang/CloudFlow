@@ -3,7 +3,7 @@ using CloudFlow.Core.Enums;
 
 namespace CloudFlow.Infrastructure.Aws.Models;
 
-[DynamoDBTable("Messages")]
+[DynamoDBTable("CloudFlow_Messages")]
 public class MessageItem
 {
     [DynamoDBHashKey]

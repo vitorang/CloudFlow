@@ -2,7 +2,7 @@ using Amazon.DynamoDBv2.DataModel;
 
 namespace CloudFlow.Infrastructure.Aws.Models;
 
-[DynamoDBTable("WebSocketConnections")]
+[DynamoDBTable("CloudFlow_WebSocketConnections")]
 public class WebSocketConnectionItem
 {
     [DynamoDBHashKey]

@@ -18,9 +18,11 @@ public static class AwsServiceExtensions
 
         var dynamoConfig = new AmazonDynamoDBConfig
         {
-            AuthenticationRegion = awsOptions.Region,
-            ServiceURL = awsOptions.DynamoDB.ServiceUrl
+            AuthenticationRegion = awsOptions.Region
         };
+
+        if (!string.IsNullOrWhiteSpace(awsOptions.DynamoDB.ServiceUrl))
+            dynamoConfig.ServiceURL = awsOptions.DynamoDB.ServiceUrl;
 
         var credentials = new BasicAWSCredentials(awsOptions.AccessKey, awsOptions.SecretKey);
 

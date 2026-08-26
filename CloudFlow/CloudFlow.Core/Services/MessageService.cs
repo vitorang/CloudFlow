@@ -6,6 +6,7 @@ using CloudFlow.Core.Interfaces.Services;
 namespace CloudFlow.Core.Services;
 
 public class MessageService(
+    IMessageRepository messageRepository,
     IWebSocketNotificationService webSocketNotificationService) : IMessageService
 {
     private const int RecentMessagesLimit = 5;
@@ -13,13 +14,17 @@ public class MessageService(
     public async Task Create(CreateMessageDto dto, CancellationToken cancellationToken)
     {
         var message = dto.ToEntity();
+        await messageRepository.Create(message, cancellationToken);
+
         var responseDto = message.ToResponseDto();
         await webSocketNotificationService.Broadcast(responseDto, cancellationToken);
     }
 
     public async Task<IReadOnlyList<MessageResponseDto>> GetRecent(CancellationToken cancellationToken)
     {
-        return await Task.FromResult<IReadOnlyList<MessageResponseDto>>([]);
+        var messages = await messageRepository.GetRecent(RecentMessagesLimit, cancellationToken);
+
+        return [.. messages.Select(m => m.ToResponseDto())];
     }
 }
 
