@@ -105,8 +105,11 @@ public class MessageStreamHandler : IDisposable
             !image.TryGetValue("CreatedAt", out var createdAtAttribute))
             return null;
 
+        var author = image.TryGetValue("Author", out var authorAttribute) ? authorAttribute.S : string.Empty;
+
         return new MessageResponseDto(
             Id: idAttribute.S,
+            Author: author,
             Text: textAttribute.S,
             Type: (MessageType)int.Parse(typeAttribute.N),
             CreatedAt: DateTime.Parse(createdAtAttribute.S)

@@ -2,6 +2,7 @@ import 'package:cloud_flow_app/cubits/config_cubit.dart';
 import 'package:cloud_flow_app/widgets/brand.dart';
 import 'package:cloud_flow_app/pages/messages/messages_page.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class ConnectPage extends StatefulWidget {
@@ -12,28 +13,61 @@ class ConnectPage extends StatefulWidget {
 }
 
 class _ConnectPageState extends State<ConnectPage> {
-  final TextEditingController _urlController = TextEditingController(
-    text: 'http://localhost:8080',
-  );
+  final TextEditingController _urlController = TextEditingController(text: 'http://localhost:8080');
+  final TextEditingController _usernameController = TextEditingController();
 
   @override
   void dispose() {
     _urlController.dispose();
+    _usernameController.dispose();
     super.dispose();
   }
 
-  void _onConnect() {
-    final text = _urlController.text.trim();
-    if (text.isEmpty) {
+  bool _validateUsername(String username) {
+    if (username.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Informe um nome de usuário.'), behavior: SnackBarBehavior.floating));
+      return false;
+    }
+
+    if (username.contains(' ')) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Informe um endereço válido.'),
+          content: Text('O nome de usuário não pode conter espaços.'),
           behavior: SnackBarBehavior.floating,
         ),
       );
+      return false;
+    }
+
+    if (username.length > 12) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('O nome de usuário deve ter no máximo 12 caracteres.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return false;
+    }
+
+    return true;
+  }
+
+  void _onConnect() {
+    final urlText = _urlController.text.trim();
+    final usernameText = _usernameController.text.trim();
+
+    if (!_validateUsername(usernameText)) return;
+
+    if (urlText.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Informe um endereço válido.'), behavior: SnackBarBehavior.floating));
       return;
     }
-    context.read<ConfigCubit>().connect(text);
+
+    context.read<ConfigCubit>().connect(urlText, username: usernameText);
   }
 
   @override
@@ -43,17 +77,12 @@ class _ConnectPageState extends State<ConnectPage> {
         listener: (context, state) {
           if (state is ConfigError) {
             ScaffoldMessenger.of(context).hideCurrentSnackBar();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(state.message), behavior: SnackBarBehavior.floating));
           } else if (state is ConfigLoaded) {
             ScaffoldMessenger.of(context).hideCurrentSnackBar();
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => const MessagesPage()),
-            );
+            Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const MessagesPage()));
           }
         },
         builder: (context, state) {
@@ -68,10 +97,7 @@ class _ConnectPageState extends State<ConnectPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const CloudFlowBrand(
-                      fontSize: 36,
-                      textAlign: TextAlign.center,
-                    ),
+                    const CloudFlowBrand(fontSize: 36, textAlign: TextAlign.center),
                     const SizedBox(height: 32),
                     TextField(
                       controller: _urlController,
@@ -79,25 +105,37 @@ class _ConnectPageState extends State<ConnectPage> {
                       decoration: const InputDecoration(
                         labelText: 'Endereço',
                         hintText: 'http://localhost:8080',
+                        prefixIcon: Icon(Icons.dns_outlined),
                         border: OutlineInputBorder(),
                       ),
                       keyboardType: TextInputType.url,
                       onSubmitted: (_) => _onConnect(),
                     ),
-                    const SizedBox(height: 32),
+
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _usernameController,
+                      enabled: !isLoading,
+                      maxLength: 12,
+                      inputFormatters: [FilteringTextInputFormatter.deny(RegExp(r'\s'))],
+                      decoration: const InputDecoration(
+                        labelText: 'Nome de usuário',
+                        prefixIcon: Icon(Icons.person_outline),
+                        border: OutlineInputBorder(),
+                        counterText: '',
+                      ),
+                      textInputAction: TextInputAction.next,
+                    ),
+
+                    const SizedBox(height: 24),
                     FilledButton(
                       onPressed: isLoading ? null : _onConnect,
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
+                      style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
                       child: isLoading
                           ? const SizedBox(
                               width: 20,
                               height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                             )
                           : const Text('Entrar'),
                     ),

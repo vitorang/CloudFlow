@@ -10,6 +10,9 @@ public class MessageItem
     public string Id { get; set; } = string.Empty;
 
     [DynamoDBProperty]
+    public string Author { get; set; } = string.Empty;
+
+    [DynamoDBProperty]
     public string Text { get; set; } = string.Empty;
 
     [DynamoDBProperty]

@@ -9,6 +9,7 @@ public static class MessageExtensions
     {
         return new Message
         {
+            Author = dto.Author.Trim(),
             Text = dto.Text,
             Type = dto.Type
         };
@@ -18,6 +19,7 @@ public static class MessageExtensions
     {
         return new MessageResponseDto(
             Id: entity.Id,
+            Author: entity.Author,
             Text: entity.Text,
             Type: entity.Type,
             CreatedAt: entity.CreatedAt

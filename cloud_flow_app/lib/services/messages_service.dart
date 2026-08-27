@@ -11,6 +11,7 @@ class MessagesService {
 
   Future<void> sendMessage({
     required String apiUrl,
+    required String author,
     required String text,
     MessageType type = MessageType.text,
   }) async {
@@ -20,6 +21,7 @@ class MessagesService {
       uri,
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
+        'author': author,
         'text': text,
         'type': type.value,
       }),

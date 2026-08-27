@@ -14,6 +14,7 @@ public class DynamoDbMessageRepository(IDynamoDBContext context) : IMessageRepos
         var item = new MessageItem
         {
             Id = message.Id,
+            Author = message.Author,
             Text = message.Text,
             Type = (int)message.Type,
             CreatedAt = message.CreatedAt.ToString("O")
@@ -38,6 +39,7 @@ public class DynamoDbMessageRepository(IDynamoDBContext context) : IMessageRepos
             .Select(item => new Message
             {
                 Id = item.Id,
+                Author = item.Author,
                 Text = item.Text,
                 Type = (MessageType)item.Type,
                 CreatedAt = DateTime.Parse(item.CreatedAt)

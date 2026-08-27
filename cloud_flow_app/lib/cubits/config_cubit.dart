@@ -27,7 +27,7 @@ class ConfigCubit extends Cubit<ConfigState> {
       : _client = client ?? http.Client(),
         super(ConfigInitial());
 
-  Future<void> connect(String rawUrl) async {
+  Future<void> connect(String rawUrl, {String username = ''}) async {
     emit(ConfigLoading());
 
     try {
@@ -49,7 +49,7 @@ class ConfigCubit extends Cubit<ConfigState> {
         return;
       }
 
-      final config = AppConfig.fromJson(decoded);
+      final config = AppConfig.fromJson(decoded, username: username);
 
       if (config.name != 'CloudFlow') {
         emit(ConfigError('O servidor informado não é um nó CloudFlow válido.'));

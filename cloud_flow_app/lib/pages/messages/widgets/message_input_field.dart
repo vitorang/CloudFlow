@@ -42,6 +42,7 @@ class _MessageInputFieldState extends State<MessageInputField> {
     try {
       await _messagesService.sendMessage(
         apiUrl: configState.config.apiUrl,
+        author: configState.config.username,
         text: text,
       );
     } catch (_) {
