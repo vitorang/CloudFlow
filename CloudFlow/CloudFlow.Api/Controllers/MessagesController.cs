@@ -21,4 +21,11 @@ public class MessagesController(IMessageService messageService) : ControllerBase
         await messageService.Create(dto, cancellationToken);
         return NoContent();
     }
+
+    [HttpDelete]
+    public async Task<IActionResult> DeleteMany([FromBody] DeleteMessagesDto dto, CancellationToken cancellationToken)
+    {
+        await messageService.DeleteMany(dto, cancellationToken);
+        return NoContent();
+    }
 }

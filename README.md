@@ -33,7 +33,7 @@ Crie as tabelas no modo **On-Demand**:
 
 - **`CloudFlow_Messages`**
   - Partition key: `Id` (`String`)
-  - DynamoDB Streams: **Imagem nova / New image** *(ativar na aba Exports and streams)*
+  - DynamoDB Streams: **Imagens novas e antigas / New and old images**
 
 - **`CloudFlow_WebSocketConnections`**
   - Partition key: `ConnectionId` (`String`)

@@ -117,7 +117,19 @@ class _MessagesListState extends State<MessagesList> {
                       itemCount: state.messages.length,
                       itemBuilder: (context, index) {
                         final message = state.messages[index];
-                        return MessageCard(message: message);
+                        final isSelected = state.selectedMessageIds.contains(message.id);
+
+                        return MessageCard(
+                          message: message,
+                          isSelectionMode: state.isSelectionMode,
+                          isSelected: isSelected,
+                          onToggleSelect: () {
+                            context.read<MessagesListCubit>().toggleSelection(message.id);
+                          },
+                          onLongPress: () {
+                            context.read<MessagesListCubit>().startSelectionMode(message.id);
+                          },
+                        );
                       },
                     ),
                   ),

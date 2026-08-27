@@ -6,4 +6,5 @@ public interface IMessageRepository
 {
     Task Create(Message message, CancellationToken cancellationToken);
     Task<IReadOnlyList<Message>> GetRecent(DateTime before, int limit, CancellationToken cancellationToken);
+    Task DeleteMany(IReadOnlyList<string> ids, CancellationToken cancellationToken);
 }

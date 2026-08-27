@@ -89,7 +89,11 @@ public class MessageStreamHandler : IDisposable
         Dictionary<string, Amazon.Lambda.DynamoDBEvents.DynamoDBEvent.AttributeValue> oldImage,
         CancellationToken cancellationToken)
     {
-        await Task.CompletedTask;
+        if (!oldImage.TryGetValue("Id", out var idAttribute))
+            return;
+
+        var webSocketMessage = new WebSocketMessageDto<string>(WebSocketEvents.MessageDeleted, idAttribute.S);
+        await webSocketNotificationService.Broadcast(webSocketMessage, cancellationToken);
     }
 
     private static MessageResponseDto? TryGetMessageDto(

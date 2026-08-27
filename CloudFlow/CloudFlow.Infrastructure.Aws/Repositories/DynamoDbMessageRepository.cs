@@ -43,4 +43,13 @@ public class DynamoDbMessageRepository(IDynamoDBContext context) : IMessageRepos
                 CreatedAt = DateTime.Parse(item.CreatedAt)
             })];
     }
+
+    public async Task DeleteMany(IReadOnlyList<string> ids, CancellationToken cancellationToken)
+    {
+        var batchWrite = context.CreateBatchWrite<MessageItem>();
+        foreach (var id in ids)
+            batchWrite.AddDeleteKey(id);
+
+        await batchWrite.ExecuteAsync(cancellationToken);
+    }
 }

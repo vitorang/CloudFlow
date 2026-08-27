@@ -51,4 +51,20 @@ class MessagesService {
 
     return RecentMessagesResponse.fromJson(decoded);
   }
+
+  Future<void> deleteMessages({
+    required String apiUrl,
+    required List<String> ids,
+  }) async {
+    final uri = Uri.parse('$apiUrl/api/messages');
+    final response = await _client.delete(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'ids': ids}),
+    );
+
+    if (!response.isSuccess) {
+      throw Exception('Falha ao excluir mensagens: status ${response.statusCode}');
+    }
+  }
 }

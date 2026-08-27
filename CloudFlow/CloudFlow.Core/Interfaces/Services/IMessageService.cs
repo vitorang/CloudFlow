@@ -6,4 +6,5 @@ public interface IMessageService
 {
     Task Create(CreateMessageDto dto, CancellationToken cancellationToken);
     Task<RecentMessagesResponseDto> GetRecent(DateTime before, CancellationToken cancellationToken);
+    Task DeleteMany(DeleteMessagesDto dto, CancellationToken cancellationToken);
 }

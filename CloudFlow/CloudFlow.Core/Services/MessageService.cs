@@ -24,5 +24,13 @@ public class MessageService(IMessageRepository messageRepository) : IMessageServ
         var responseDtos = slicedMessages.Select(m => m.ToResponseDto()).ToList();
         return new RecentMessagesResponseDto(responseDtos, hasPreviousMessages);
     }
+
+    public async Task DeleteMany(DeleteMessagesDto dto, CancellationToken cancellationToken)
+    {
+        if (dto.Ids.Count == 0)
+            return;
+
+        await messageRepository.DeleteMany(dto.Ids, cancellationToken);
+    }
 }
 
