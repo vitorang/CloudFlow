@@ -14,11 +14,17 @@ Crie um usuário com credenciais (`AccessKey` e `SecretKey`) e as permissões:
 - `AmazonAPIGatewayInvokeFullAccess`
 - `AWSLambda_FullAccess`
 
-#### Role de Execução (Lambdas)
-Crie uma Role do tipo **Lambda** (ex: `CloudFlow_WebSocket`) e anexe:
-- `AWSLambdaBasicExecutionRole`
-- `AmazonDynamoDBFullAccess`
-- `AmazonAPIGatewayInvokeFullAccess`
+#### Roles de Execução (Lambdas)
+Crie Roles do tipo **AWS Service ➔ Lambda** para cada função:
+
+1. **`CloudFlow_WebSocket`** *(usada por `CloudFlow_WebSocketConnect` e `CloudFlow_WebSocketDisconnect`)*
+   - `AWSLambdaBasicExecutionRole`
+   - `AmazonDynamoDBFullAccess`
+
+2. **`CloudFlow_DynamoDb`** *(usada por `CloudFlow_DynamoDbMessageStream`)*
+   - `AWSLambdaBasicExecutionRole`
+   - `AmazonDynamoDBFullAccess`
+   - `AmazonAPIGatewayInvokeFullAccess`
 
 ---
 
@@ -27,7 +33,7 @@ Crie as tabelas no modo **On-Demand**:
 
 - **`CloudFlow_Messages`**
   - Partition key: `Id` (`String`)
-  - Streams: `New and old images` *(necessário caso utilize DynamoDB Streams no worker)*
+  - DynamoDB Streams: **Imagem nova / New image** *(ativar na aba Exports and streams)*
 
 - **`CloudFlow_WebSocketConnections`**
   - Partition key: `ConnectionId` (`String`)
@@ -55,12 +61,20 @@ Execute o script de deploy na pasta `CloudFlow` para compilar e enviar as funç�
 ```powershell
 ./deploy-lambda.ps1 CloudFlow_WebSocketConnect
 ./deploy-lambda.ps1 CloudFlow_WebSocketDisconnect
+./deploy-lambda.ps1 CloudFlow_DynamoDbMessageStream
 ```
 
 Handlers correspondentes:
 - **$connect**: `CloudFlow.Workers.Aws::CloudFlow.Workers.Aws.WebSocketApi.WebSocketConnectHandler::Handle`
 - **$disconnect**: `CloudFlow.Workers.Aws::CloudFlow.Workers.Aws.WebSocketApi.WebSocketDisconnectHandler::Handle`
 - **DynamoDB Streams**: `CloudFlow.Workers.Aws::CloudFlow.Workers.Aws.DynamoDbStreams.MessageStreamHandler::Handle`
+
+#### Configuração Adicional da Lambda `CloudFlow_DynamoDbMessageStream`:
+1. **Trigger (Gatilho)**:
+   - Adicionar gatilho do tipo **DynamoDB** apontando para a tabela `CloudFlow_Messages`.
+   - Starting position: `Latest`.
+2. **Variável de Ambiente**:
+   - `AWS_WEBSOCKET_SERVICE_URL`: URL de gerenciamento HTTP do API Gateway (`https://{api-id}.execute-api.{region}.amazonaws.com/{stage}`).
 
 ---
 

@@ -1,4 +1,3 @@
-using CloudFlow.Core.Constants;
 using CloudFlow.Core.Dtos;
 using CloudFlow.Core.Extensions;
 using CloudFlow.Core.Interfaces.Repositories;
@@ -6,9 +5,7 @@ using CloudFlow.Core.Interfaces.Services;
 
 namespace CloudFlow.Core.Services;
 
-public class MessageService(
-    IMessageRepository messageRepository,
-    IWebSocketNotificationService webSocketNotificationService) : IMessageService
+public class MessageService(IMessageRepository messageRepository) : IMessageService
 {
     private const int RecentMessagesLimit = 5;
 
@@ -16,10 +13,6 @@ public class MessageService(
     {
         var message = dto.ToEntity();
         await messageRepository.Create(message, cancellationToken);
-
-        var responseDto = message.ToResponseDto();
-        var webSocketMessage = new WebSocketMessageDto<MessageResponseDto>(WebSocketEvents.MessageCreated, responseDto);
-        await webSocketNotificationService.Broadcast(webSocketMessage, cancellationToken);
     }
 
     public async Task<RecentMessagesResponseDto> GetRecent(DateTime before, CancellationToken cancellationToken)
