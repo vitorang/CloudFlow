@@ -1,3 +1,4 @@
+using CloudFlow.Core.Constants;
 using CloudFlow.Core.Dtos;
 using CloudFlow.Core.Extensions;
 using CloudFlow.Core.Interfaces.Repositories;
@@ -17,14 +18,18 @@ public class MessageService(
         await messageRepository.Create(message, cancellationToken);
 
         var responseDto = message.ToResponseDto();
-        await webSocketNotificationService.Broadcast(responseDto, cancellationToken);
+        var webSocketMessage = new WebSocketMessageDto<MessageResponseDto>(WebSocketEvents.MessageCreated, responseDto);
+        await webSocketNotificationService.Broadcast(webSocketMessage, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<MessageResponseDto>> GetRecent(CancellationToken cancellationToken)
+    public async Task<RecentMessagesResponseDto> GetRecent(DateTime before, CancellationToken cancellationToken)
     {
-        var messages = await messageRepository.GetRecent(RecentMessagesLimit, cancellationToken);
+        var messages = await messageRepository.GetRecent(before, RecentMessagesLimit + 1, cancellationToken);
+        var hasPreviousMessages = messages.Count > RecentMessagesLimit;
+        var slicedMessages = messages.Take(RecentMessagesLimit).ToList();
 
-        return [.. messages.Select(m => m.ToResponseDto())];
+        var responseDtos = slicedMessages.Select(m => m.ToResponseDto()).ToList();
+        return new RecentMessagesResponseDto(responseDtos, hasPreviousMessages);
     }
 }
 

@@ -9,10 +9,10 @@ namespace CloudFlow.Api.Controllers;
 public class MessagesController(IMessageService messageService) : ControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<MessageResponseDto>>> GetRecent(CancellationToken cancellationToken)
+    public async Task<ActionResult<RecentMessagesResponseDto>> GetRecent([FromQuery] DateTime? before, CancellationToken cancellationToken)
     {
-        var messages = await messageService.GetRecent(cancellationToken);
-        return Ok(messages);
+        var result = await messageService.GetRecent(before ?? DateTime.UtcNow, cancellationToken);
+        return Ok(result);
     }
 
     [HttpPost]

@@ -1,5 +1,10 @@
 {
     "dotrush.roslyn.projectOrSolutionFiles": [
         "CloudFlow/CloudFlow.slnx"
-    ]
+    ],
+    "dart.lineLength": 120,
+    "[dart]": {
+        "editor.wordWrapColumn": 120,
+        "editor.rulers": [120]
+    }
 }

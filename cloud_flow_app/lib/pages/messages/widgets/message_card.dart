@@ -6,41 +6,86 @@ class MessageCard extends StatelessWidget {
 
   const MessageCard({super.key, required this.message});
 
+  String _formatTimestamp(DateTime dateTime) {
+    final localTime = dateTime.toLocal();
+    final now = DateTime.now();
+    final isToday = localTime.year == now.year && localTime.month == now.month && localTime.day == now.day;
+
+    final hour = localTime.hour.toString().padLeft(2, '0');
+    final minute = localTime.minute.toString().padLeft(2, '0');
+
+    if (isToday) {
+      return '$hour:$minute';
+    }
+
+    final day = localTime.day.toString().padLeft(2, '0');
+    final month = localTime.month.toString().padLeft(2, '0');
+    final year = localTime.year;
+
+    return '$day/$month/$year $hour:$minute';
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 0,
-      color: theme.colorScheme.surfaceContainerLow,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.2),
+          ),
         ),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              message.text,
-              style: theme.textTheme.bodyLarge,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CircleAvatar(
+            radius: 18,
+            backgroundColor: theme.colorScheme.surfaceContainerHighest,
+            child: Icon(
+              Icons.cloud_outlined,
+              size: 20,
+              color: theme.colorScheme.primary,
             ),
-            const SizedBox(height: 8),
-            Align(
-              alignment: Alignment.bottomRight,
-              child: Text(
-                '${message.createdAt.hour.toString().padLeft(2, '0')}:${message.createdAt.minute.toString().padLeft(2, '0')}',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.outline,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'Mensagem',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '•  ${_formatTimestamp(message.createdAt)}',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.outline,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
+                const SizedBox(height: 4),
+                SelectableText(
+                  message.text,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurface,
+                    height: 1.45,
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

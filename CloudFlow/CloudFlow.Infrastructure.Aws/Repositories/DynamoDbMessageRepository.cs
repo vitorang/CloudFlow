@@ -22,24 +22,25 @@ public class DynamoDbMessageRepository(IDynamoDBContext context) : IMessageRepos
         await context.SaveAsync(item, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<Message>> GetRecent(int limit, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<Message>> GetRecent(DateTime before, int limit, CancellationToken cancellationToken)
     {
-        var scanConditions = new List<ScanCondition>();
+        var scanConditions = new List<ScanCondition>
+        {
+            new("CreatedAt", ScanOperator.LessThan, before.ToUniversalTime().ToString("O"))
+        };
         var search = context.ScanAsync<MessageItem>(scanConditions);
 
         var items = await search.GetNextSetAsync(cancellationToken);
 
-        return items
+        return [.. items
             .OrderByDescending(item => item.CreatedAt)
             .Take(limit)
-            .OrderBy(item => item.CreatedAt)
             .Select(item => new Message
             {
                 Id = item.Id,
                 Text = item.Text,
                 Type = (MessageType)item.Type,
                 CreatedAt = DateTime.Parse(item.CreatedAt)
-            })
-            .ToList();
+            })];
     }
 }

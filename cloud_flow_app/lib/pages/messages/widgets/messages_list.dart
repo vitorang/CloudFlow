@@ -13,7 +13,6 @@ class MessagesList extends StatefulWidget {
 
 class _MessagesListState extends State<MessagesList> {
   final ScrollController _scrollController = ScrollController();
-  bool _wasAtBottom = true;
 
   @override
   void dispose() {
@@ -21,19 +20,16 @@ class _MessagesListState extends State<MessagesList> {
     super.dispose();
   }
 
-  bool _isAtBottom() {
-    if (!_scrollController.hasClients) return true;
-    final maxScroll = _scrollController.position.maxScrollExtent;
-    final currentScroll = _scrollController.offset;
-    return (maxScroll - currentScroll) <= 60.0;
-  }
-
-  void _scrollToBottom() {
+  void _checkIfNeedsMoreContent(MessagesListState state) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
-        _scrollController.jumpTo(
-          _scrollController.position.maxScrollExtent,
-        );
+      if (!_scrollController.hasClients) return;
+      if (!state.hasPreviousMessages || state.isLoading) return;
+
+      if (_scrollController.position.maxScrollExtent <= 20.0) {
+        final configState = context.read<ConfigCubit>().state;
+        if (configState is ConfigLoaded) {
+          context.read<MessagesListCubit>().loadPreviousMessages(configState.config.apiUrl);
+        }
       }
     });
   }
@@ -43,44 +39,28 @@ class _MessagesListState extends State<MessagesList> {
     final theme = Theme.of(context);
 
     return BlocConsumer<MessagesListCubit, MessagesListState>(
-      listenWhen: (previous, current) => current is MessagesListLoaded,
       listener: (context, state) {
-        if (_wasAtBottom) {
-          _scrollToBottom();
-        }
+        _checkIfNeedsMoreContent(state);
       },
       builder: (context, state) {
-        if (state is MessagesListLoading) {
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
+        if (state.messages.isEmpty && state.isLoading) {
+          return const Column(children: [LinearProgressIndicator(minHeight: 2)]);
         }
 
-        if (state is MessagesListError) {
+        if (state.errorMessage != null && state.messages.isEmpty) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  Icons.error_outline,
-                  size: 48,
-                  color: theme.colorScheme.error,
-                ),
+                Icon(Icons.error_outline, size: 48, color: theme.colorScheme.error),
                 const SizedBox(height: 12),
-                Text(
-                  state.message,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.error,
-                  ),
-                ),
+                Text(state.errorMessage!, style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.error)),
                 const SizedBox(height: 12),
                 FilledButton.tonal(
                   onPressed: () {
                     final configState = context.read<ConfigCubit>().state;
                     if (configState is ConfigLoaded) {
-                      context
-                          .read<MessagesListCubit>()
-                          .loadRecentMessages(configState.config.apiUrl);
+                      context.read<MessagesListCubit>().loadRecentMessages(configState.config.apiUrl);
                     }
                   },
                   child: const Text('Tentar novamente'),
@@ -90,47 +70,62 @@ class _MessagesListState extends State<MessagesList> {
           );
         }
 
-        if (state is MessagesListLoaded) {
-          if (state.messages.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.chat_bubble_outline,
-                    size: 64,
-                    color: theme.colorScheme.outline,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Nenhuma mensagem ainda',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          return NotificationListener<ScrollNotification>(
-            onNotification: (notification) {
-              _wasAtBottom = _isAtBottom();
-              return false;
-            },
-            child: ListView.builder(
-              controller: _scrollController,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              itemCount: state.messages.length,
-              itemBuilder: (context, index) {
-                final message = state.messages[index];
-                return MessageCard(message: message);
-              },
+        if (state.messages.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.chat_bubble_outline, size: 64, color: theme.colorScheme.outline),
+                const SizedBox(height: 16),
+                Text(
+                  'Nenhuma mensagem ainda',
+                  style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                ),
+              ],
             ),
           );
         }
 
-        return const SizedBox.shrink();
+        return Column(
+          children: [
+            if (state.isLoading) const LinearProgressIndicator(minHeight: 2) else const SizedBox(height: 2),
+            Expanded(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 720),
+                  child: NotificationListener<ScrollNotification>(
+                    onNotification: (notification) {
+                      if (_scrollController.hasClients) {
+                        final maxScroll = _scrollController.position.maxScrollExtent;
+                        final currentScroll = _scrollController.offset;
+
+                        if ((maxScroll - currentScroll) <= 100.0) {
+                          if (state.hasPreviousMessages && !state.isLoading) {
+                            final configState = context.read<ConfigCubit>().state;
+                            if (configState is ConfigLoaded) {
+                              context.read<MessagesListCubit>().loadPreviousMessages(configState.config.apiUrl);
+                            }
+                          }
+                        }
+                      }
+
+                      return false;
+                    },
+                    child: ListView.builder(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      itemCount: state.messages.length,
+                      itemBuilder: (context, index) {
+                        final message = state.messages[index];
+                        return MessageCard(message: message);
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
       },
     );
   }

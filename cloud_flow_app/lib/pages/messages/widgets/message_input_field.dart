@@ -94,65 +94,72 @@ class _MessageInputFieldState extends State<MessageInputField> {
       builder: (context, connectionState) {
         final isConnected = connectionState is WsConnectionConnected;
 
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            border: Border(
-              top: BorderSide(
-                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
-              ),
-            ),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              IconButton(
-                tooltip: 'Anexar arquivo',
-                icon: const Icon(Icons.attach_file),
-                onPressed: isConnected ? () {} : null,
-              ),
-              Expanded(
-                child: Focus(
-                  onKeyEvent: _handleKeyEvent,
-                  child: TextField(
-                    controller: _messageController,
-                    focusNode: _focusNode,
-                    readOnly: !isConnected,
-                    minLines: 1,
-                    maxLines: 5,
-                    keyboardType: TextInputType.multiline,
-                    textInputAction: TextInputAction.newline,
-                    decoration: InputDecoration(
-                      hintText: isConnected
-                          ? 'Digite uma mensagem...'
-                          : 'Conectando ao servidor...',
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                    ),
+        return Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 720),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHigh,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
                   ),
                 ),
-              ),
-              IconButton(
-                tooltip: 'Enviar mensagem',
-                icon: _isSending
-                    ? SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: theme.colorScheme.primary,
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    IconButton(
+                      tooltip: 'Anexar arquivo',
+                      icon: const Icon(Icons.attach_file),
+                      onPressed: isConnected ? () {} : null,
+                    ),
+                    Expanded(
+                      child: Focus(
+                        onKeyEvent: _handleKeyEvent,
+                        child: TextField(
+                          controller: _messageController,
+                          focusNode: _focusNode,
+                          readOnly: !isConnected,
+                          minLines: 1,
+                          maxLines: 5,
+                          keyboardType: TextInputType.multiline,
+                          textInputAction: TextInputAction.newline,
+                          decoration: InputDecoration(
+                            hintText: isConnected
+                                ? 'Digite uma mensagem...'
+                                : 'Conectando ao servidor...',
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                          ),
                         ),
-                      )
-                    : Icon(
-                        Icons.send,
-                        color: isConnected
-                            ? theme.colorScheme.primary
-                            : theme.colorScheme.onSurface.withValues(alpha: 0.38),
                       ),
-                onPressed: isConnected ? _onSendMessage : null,
+                    ),
+                    IconButton(
+                      tooltip: 'Enviar mensagem',
+                      icon: _isSending
+                          ? SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: theme.colorScheme.primary,
+                              ),
+                            )
+                          : Icon(
+                              Icons.send,
+                              color: isConnected
+                                  ? theme.colorScheme.primary
+                                  : theme.colorScheme.onSurface.withValues(alpha: 0.38),
+                            ),
+                      onPressed: isConnected ? _onSendMessage : null,
+                    ),
+                  ],
+                ),
               ),
-            ],
+            ),
           ),
         );
       },

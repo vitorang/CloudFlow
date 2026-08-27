@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:cloud_flow_app/enums/message_type.dart';
 import 'package:cloud_flow_app/extensions/http_response_extensions.dart';
-import 'package:cloud_flow_app/models/message_item.dart';
+import 'package:cloud_flow_app/models/recent_messages_response.dart';
 import 'package:http/http.dart' as http;
 
 class MessagesService {
@@ -30,8 +30,14 @@ class MessagesService {
     }
   }
 
-  Future<List<MessageItem>> getRecentMessages({required String apiUrl}) async {
-    final uri = Uri.parse('$apiUrl/api/messages');
+  Future<RecentMessagesResponse> getRecentMessages({
+    required String apiUrl,
+    DateTime? before,
+  }) async {
+    final baseUri = Uri.parse('$apiUrl/api/messages');
+    final uri = before != null
+        ? baseUri.replace(queryParameters: {'before': before.toUtc().toIso8601String()})
+        : baseUri;
     final response = await _client.get(uri);
 
     if (!response.isSuccess) {
@@ -39,13 +45,10 @@ class MessagesService {
     }
 
     final dynamic decoded = jsonDecode(response.body);
-    if (decoded is! List) {
-      return [];
+    if (decoded is! Map<String, dynamic>) {
+      return const RecentMessagesResponse(messages: [], hasPreviousMessages: false);
     }
 
-    return decoded
-        .whereType<Map<String, dynamic>>()
-        .map((json) => MessageItem.fromJson(json))
-        .toList();
+    return RecentMessagesResponse.fromJson(decoded);
   }
 }

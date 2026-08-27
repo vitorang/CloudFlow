@@ -1,5 +1,6 @@
 using Amazon.Lambda.Core;
 using Amazon.Lambda.DynamoDBEvents;
+using CloudFlow.Core.Constants;
 using CloudFlow.Core.Dtos;
 using CloudFlow.Core.Enums;
 using CloudFlow.Core.Interfaces.Services;
@@ -32,7 +33,8 @@ public class MessageStreamHandler(IWebSocketNotificationService webSocketNotific
         if (messageDto == null)
             return;
 
-        await webSocketNotificationService.Broadcast(messageDto, cancellationToken);
+        var webSocketMessage = new WebSocketMessageDto<MessageResponseDto>(WebSocketEvents.MessageCreated, messageDto);
+        await webSocketNotificationService.Broadcast(webSocketMessage, cancellationToken);
     }
 
     private async Task HandleUpdated(

@@ -25,9 +25,7 @@ class MessagesPage extends StatelessWidget {
       },
       child: BlocProvider(
         create: (context) {
-          final messagesListCubit = MessagesListCubit(
-            connectionCubit: context.read<ConnectionCubit>(),
-          );
+          final messagesListCubit = MessagesListCubit(connectionCubit: context.read<ConnectionCubit>());
           final configState = context.read<ConfigCubit>().state;
           if (configState is ConfigLoaded) {
             messagesListCubit.loadRecentMessages(configState.config.apiUrl);
@@ -49,9 +47,7 @@ class _MessagesView extends StatelessWidget {
       listener: (context, connectionState) {
         if (connectionState is WsConnectionDisconnected) {
           context.read<ConfigCubit>().reset();
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const ConnectPage()),
-          );
+          Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const ConnectPage()));
         }
       },
       child: Scaffold(
@@ -71,8 +67,8 @@ class _MessagesView extends StatelessWidget {
         body: const SafeArea(
           child: Column(
             children: [
-              Expanded(child: MessagesList()),
               MessageInputField(),
+              Expanded(child: MessagesList()),
             ],
           ),
         ),
