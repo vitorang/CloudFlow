@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Amazon.ApiGatewayManagementApi;
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DataModel;
@@ -10,6 +9,7 @@ using CloudFlow.Core.Interfaces.Services;
 using CloudFlow.Infrastructure.Aws.Constants;
 using CloudFlow.Infrastructure.Aws.Repositories;
 using CloudFlow.Infrastructure.Aws.Services;
+using System.Text.Json;
 
 namespace CloudFlow.Workers.Aws.Sns;
 
@@ -19,6 +19,10 @@ public class AuditEventSnsHandler : IDisposable
     private readonly AmazonDynamoDBClient? dynamoClient;
     private readonly DynamoDBContext? dynamoContext;
     private readonly AmazonApiGatewayManagementApiClient? apiGatewayClient;
+    private readonly JsonSerializerOptions jsonSerializerOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
 
     public AuditEventSnsHandler()
     {
@@ -26,7 +30,9 @@ public class AuditEventSnsHandler : IDisposable
             ?? throw new InvalidOperationException($"Variável de ambiente {AwsEnvironmentVariables.WebSocketServiceUrl} não foi definida.");
 
         dynamoClient = new AmazonDynamoDBClient();
-        dynamoContext = new DynamoDBContext(dynamoClient);
+        dynamoContext = new DynamoDBContextBuilder()
+            .WithDynamoDBClient(() => dynamoClient)
+            .Build();
         var connectionRepository = new DynamoDbWebSocketConnectionRepository(dynamoContext);
 
         var wsConfig = new AmazonApiGatewayManagementApiConfig
@@ -50,7 +56,7 @@ public class AuditEventSnsHandler : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    public async Task Handle(SNSEvent snsEvent, ILambdaContext context)
+    public async Task Handle(SNSEvent snsEvent, ILambdaContext _)
     {
         foreach (var record in snsEvent.Records)
         {
@@ -59,10 +65,7 @@ public class AuditEventSnsHandler : IDisposable
             if (string.IsNullOrWhiteSpace(message))
                 continue;
 
-            var auditDto = JsonSerializer.Deserialize<AuditEventDto>(message, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            });
+            var auditDto = JsonSerializer.Deserialize<AuditEventDto>(message, jsonSerializerOptions);
 
             if (auditDto is null)
                 continue;

@@ -32,7 +32,9 @@ public class MessageStreamHandler : IDisposable
             ?? throw new InvalidOperationException($"Variável de ambiente {AwsEnvironmentVariables.SnsMessagesTopicArn} não foi definida.");
 
         dynamoClient = new AmazonDynamoDBClient();
-        dynamoContext = new DynamoDBContext(dynamoClient);
+        dynamoContext = new DynamoDBContextBuilder()
+            .WithDynamoDBClient(() => dynamoClient)
+            .Build();
         var connectionRepository = new DynamoDbWebSocketConnectionRepository(dynamoContext);
 
         var wsConfig = new AmazonApiGatewayManagementApiConfig
@@ -63,7 +65,7 @@ public class MessageStreamHandler : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    public async Task Handle(DynamoDBEvent dynamoEvent, ILambdaContext context)
+    public async Task Handle(DynamoDBEvent dynamoEvent, ILambdaContext _)
     {
         foreach (var record in dynamoEvent.Records)
         {
