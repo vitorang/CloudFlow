@@ -17,6 +17,40 @@ Construído com .NET no backend e Flutter no frontend, o projeto adota uma Arqui
   - AWS IAM
 
 
+## Arquitetura e Fluxos
+
+### 1. Envio de Mensagens em Tempo Real
+```mermaid
+sequenceDiagram
+    autonumber
+    Flutter App->>API (.NET): Envia mensagem<br/>(POST /api/messages)
+    API (.NET)->>DynamoDB: Persiste mensagem<br/>(com TTL opcional)
+    DynamoDB-->>Lambda Streams: Dispara evento INSERT
+    Lambda Streams->>API Gateway WS: Broadcast<br/>(MessageCreated)
+    API Gateway WS-->>Flutter App: Notifica todos os<br/>clientes conectados
+```
+
+### 2. Auditoria Desacoplada (Pub/Sub com SNS)
+```mermaid
+sequenceDiagram
+    autonumber
+    Lambda Streams->>SNS (Tópico): Publica evento de negócio
+    SNS (Tópico)-->>Lambda Auditoria: Dispara função inscrita
+    Lambda Auditoria->>API Gateway WS: Broadcast<br/>(AuditEvent)
+    API Gateway WS-->>Flutter App: Exibe evento no painel lateral
+```
+
+### 3. Limpeza Automática (DynamoDB TTL)
+```mermaid
+sequenceDiagram
+    autonumber
+    DynamoDB-->>DynamoDB: Identifica item expirado pelo TTL
+    DynamoDB-->>Lambda Streams: Dispara evento REMOVE
+    Lambda Streams->>API Gateway WS: Broadcast<br/>(MessageDeleted)
+    API Gateway WS-->>Flutter App: Notifica exclusão a todos<br/>os clientes conectados
+```
+
+
 ## Como Executar
 
 ### 1. Pré-requisitos
