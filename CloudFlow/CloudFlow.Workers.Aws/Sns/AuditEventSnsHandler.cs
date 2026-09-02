@@ -7,6 +7,7 @@ using Amazon.Lambda.SNSEvents;
 using CloudFlow.Core.Constants;
 using CloudFlow.Core.Dtos;
 using CloudFlow.Core.Interfaces.Services;
+using CloudFlow.Infrastructure.Aws.Constants;
 using CloudFlow.Infrastructure.Aws.Repositories;
 using CloudFlow.Infrastructure.Aws.Services;
 
@@ -21,8 +22,8 @@ public class AuditEventSnsHandler : IDisposable
 
     public AuditEventSnsHandler()
     {
-        var wsServiceUrl = Environment.GetEnvironmentVariable("AWS_WEBSOCKET_SERVICE_URL")
-            ?? throw new InvalidOperationException("Variável de ambiente AWS_WEBSOCKET_SERVICE_URL não foi definida.");
+        var wsServiceUrl = Environment.GetEnvironmentVariable(AwsEnvironmentVariables.WebSocketServiceUrl)
+            ?? throw new InvalidOperationException($"Variável de ambiente {AwsEnvironmentVariables.WebSocketServiceUrl} não foi definida.");
 
         dynamoClient = new AmazonDynamoDBClient();
         dynamoContext = new DynamoDBContext(dynamoClient);

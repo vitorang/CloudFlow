@@ -114,14 +114,14 @@ Crie as seguintes funções no Console da AWS (opção **Criar do zero** / *Auth
 
 1. **`CloudFlow_WebSocketConnect`**
    - Role de Execução: `CloudFlow_WebSocket`
-   - Handler: `CloudFlow.Workers.Aws::CloudFlow.Workers.Aws.WebSocketApi.WebSocketConnectHandler::Handle`
+   - Handler: `CloudFlow.Workers.Aws::CloudFlow.Workers.Aws.WebSocketApi.WebSocketConnectionHandler::Connect`
    - Gatilho: Rota `$connect` do API Gateway WebSocket
    - Variável de Ambiente:
      - `AWS_SNS_USERS_TOPIC_ARN`: ARN do tópico `CloudFlow_Users`
 
 2. **`CloudFlow_WebSocketDisconnect`**
    - Role de Execução: `CloudFlow_WebSocket`
-   - Handler: `CloudFlow.Workers.Aws::CloudFlow.Workers.Aws.WebSocketApi.WebSocketDisconnectHandler::Handle`
+   - Handler: `CloudFlow.Workers.Aws::CloudFlow.Workers.Aws.WebSocketApi.WebSocketConnectionHandler::Disconnect`
    - Gatilho: Rota `$disconnect` do API Gateway WebSocket
    - Variável de Ambiente:
      - `AWS_SNS_USERS_TOPIC_ARN`: ARN do tópico `CloudFlow_Users`
@@ -168,10 +168,8 @@ Copie `CloudFlow/.env.example` para `CloudFlow/.env` e preencha as variáveis co
 ## Próximos Passos
 
 ### AWS
-- **Monitoramento de Mensagens:** Monitoramento em tempo real do ciclo de vida das mensagens (notificação visual no app dos eventos disparados pelas Lambdas)
 - **Armazenamento de Arquivos:** Envio e compartilhamento de arquivos e imagens (AWS S3 com Presigned URLs)
 - **Processamento Assíncrono:** Exclusão assíncrona de arquivos anexados via fila (AWS SQS)
-- **Mensageria e Notificações:** Publicação e distribuição de eventos de mensagens via mensageria (AWS SNS)
 - **Pré-visualização de Conteúdo:** Pré-visualização rica de links compartilhados (Rich Link Previews / OpenGraph)
 - **Limpeza Automática:** Expiração e exclusão automática de mensagens antigas (DynamoDB TTL)
 

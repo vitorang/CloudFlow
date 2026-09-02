@@ -8,6 +8,7 @@ using CloudFlow.Core.Constants;
 using CloudFlow.Core.Dtos;
 using CloudFlow.Core.Enums;
 using CloudFlow.Core.Interfaces.Services;
+using CloudFlow.Infrastructure.Aws.Constants;
 using CloudFlow.Infrastructure.Aws.Repositories;
 using CloudFlow.Infrastructure.Aws.Services;
 
@@ -15,7 +16,6 @@ namespace CloudFlow.Workers.Aws.DynamoDbStreams;
 
 public class MessageStreamHandler : IDisposable
 {
-    private const string TopicName = "CloudFlow_Messages";
     private readonly IWebSocketNotificationService webSocketNotificationService;
     private readonly IAuditNotificationService auditNotificationService;
     private readonly AmazonDynamoDBClient? dynamoClient;
@@ -25,11 +25,11 @@ public class MessageStreamHandler : IDisposable
 
     public MessageStreamHandler()
     {
-        var wsServiceUrl = Environment.GetEnvironmentVariable("AWS_WEBSOCKET_SERVICE_URL")
-            ?? throw new InvalidOperationException("Variável de ambiente AWS_WEBSOCKET_SERVICE_URL não foi definida.");
+        var wsServiceUrl = Environment.GetEnvironmentVariable(AwsEnvironmentVariables.WebSocketServiceUrl)
+            ?? throw new InvalidOperationException($"Variável de ambiente {AwsEnvironmentVariables.WebSocketServiceUrl} não foi definida.");
 
-        var snsTopicArn = Environment.GetEnvironmentVariable("AWS_SNS_MESSAGES_TOPIC_ARN")
-            ?? throw new InvalidOperationException("Variável de ambiente AWS_SNS_MESSAGES_TOPIC_ARN não foi definida.");
+        var snsTopicArn = Environment.GetEnvironmentVariable(AwsEnvironmentVariables.SnsMessagesTopicArn)
+            ?? throw new InvalidOperationException($"Variável de ambiente {AwsEnvironmentVariables.SnsMessagesTopicArn} não foi definida.");
 
         dynamoClient = new AmazonDynamoDBClient();
         dynamoContext = new DynamoDBContext(dynamoClient);
@@ -91,7 +91,7 @@ public class MessageStreamHandler : IDisposable
         await webSocketNotificationService.Broadcast(webSocketMessage, cancellationToken);
 
         var auditDto = new AuditEventDto(
-            TopicName: TopicName,
+            TopicName: SnsTopics.Messages,
             EventType: WebSocketEvents.MessageCreated,
             OccurredAt: DateTime.UtcNow,
             Payload: messageDto
@@ -120,7 +120,7 @@ public class MessageStreamHandler : IDisposable
         await webSocketNotificationService.Broadcast(webSocketMessage, cancellationToken);
 
         var auditDto = new AuditEventDto(
-            TopicName: TopicName,
+            TopicName: SnsTopics.Messages,
             EventType: WebSocketEvents.MessageDeleted,
             OccurredAt: DateTime.UtcNow,
             Payload: new { Id = messageId }

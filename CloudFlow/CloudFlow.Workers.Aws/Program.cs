@@ -13,8 +13,7 @@ public class Program
         var builder = Host.CreateApplicationBuilder(args);
         builder.Services.AddAwsInfrastructure(builder.Configuration);
         builder.Services.AddScoped<DynamoDbStreams.MessageStreamHandler>();
-        builder.Services.AddScoped<WebSocketApi.WebSocketConnectHandler>();
-        builder.Services.AddScoped<WebSocketApi.WebSocketDisconnectHandler>();
+        builder.Services.AddScoped<WebSocketApi.WebSocketConnectionHandler>();
         builder.Services.AddScoped<Sns.AuditEventSnsHandler>();
 
         var host = builder.Build();
