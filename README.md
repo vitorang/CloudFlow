@@ -12,6 +12,7 @@ Construído com .NET no backend e Flutter no frontend, o projeto adota uma Arqui
 - Cloud & Serverless (AWS):
   - AWS Lambda
   - Amazon DynamoDB & DynamoDB Streams
+  - Amazon SNS
   - Amazon API Gateway (WebSocket)
   - AWS IAM
 
@@ -59,11 +60,19 @@ Crie Roles do tipo AWS Service ➔ Lambda com as permissões:
 1. `CloudFlow_WebSocket`
    - `AWSLambdaBasicExecutionRole`
    - `AmazonDynamoDBFullAccess`
+   - `AmazonSNSFullAccess`
 
 2. `CloudFlow_DynamoDb`
    - `AWSLambdaBasicExecutionRole`
    - `AmazonDynamoDBFullAccess`
    - `AmazonAPIGatewayInvokeFullAccess`
+   - `AmazonSNSFullAccess`
+
+3. `CloudFlow_Audit`
+   - `AWSLambdaBasicExecutionRole`
+   - `AmazonDynamoDBFullAccess`
+   - `AmazonAPIGatewayInvokeFullAccess`
+   - `AmazonSNSReadOnlyAccess`
 
 
 ### 2. DynamoDB
@@ -77,7 +86,14 @@ Crie as tabelas no modo On-Demand:
   - Partition key: `ConnectionId` (String)
 
 
-### 3. API Gateway (WebSocket)
+### 3. SNS (Simple Notification Service)
+Crie os tópicos para publicação e distribuição de eventos de auditoria (ambos do tipo **Padrão / Standard**):
+
+- **`CloudFlow_Messages`**: eventos de ciclo de vida de mensagens
+- **`CloudFlow_Users`**: eventos de presença/sessão
+
+
+### 4. API Gateway (WebSocket)
 Crie uma API WebSocket:
 - Route selection expression: `$request.body.action`
 - Rotas:
@@ -88,33 +104,62 @@ Crie uma API WebSocket:
 - Stage: `dev` (sempre clicar em Implantar API / Deploy API após alterações)
 
 
-### 4. Implantação das Lambdas
-Instale a ferramenta global da AWS Lambda (caso ainda não tenha):
+### 5. Criação e Configuração das Lambdas no Console da AWS
+
+Crie as seguintes funções no Console da AWS (opção **Criar do zero** / *Author from scratch*):
+- **Runtime / Tempo de execução**: `.NET 10`
+- **Memória**: `256 MB`
+
+#### Funções a criar:
+
+1. **`CloudFlow_WebSocketConnect`**
+   - Role de Execução: `CloudFlow_WebSocket`
+   - Handler: `CloudFlow.Workers.Aws::CloudFlow.Workers.Aws.WebSocketApi.WebSocketConnectHandler::Handle`
+   - Gatilho: Rota `$connect` do API Gateway WebSocket
+   - Variável de Ambiente:
+     - `AWS_SNS_USERS_TOPIC_ARN`: ARN do tópico `CloudFlow_Users`
+
+2. **`CloudFlow_WebSocketDisconnect`**
+   - Role de Execução: `CloudFlow_WebSocket`
+   - Handler: `CloudFlow.Workers.Aws::CloudFlow.Workers.Aws.WebSocketApi.WebSocketDisconnectHandler::Handle`
+   - Gatilho: Rota `$disconnect` do API Gateway WebSocket
+   - Variável de Ambiente:
+     - `AWS_SNS_USERS_TOPIC_ARN`: ARN do tópico `CloudFlow_Users`
+
+3. **`CloudFlow_DynamoDbMessageStream`**
+   - Role de Execução: `CloudFlow_DynamoDb`
+   - Handler: `CloudFlow.Workers.Aws::CloudFlow.Workers.Aws.DynamoDbStreams.MessageStreamHandler::Handle`
+   - Gatilho: **DynamoDB** apontando para a tabela `CloudFlow_Messages` (posição inicial: *Latest*)
+   - Variáveis de Ambiente:
+     - `AWS_WEBSOCKET_SERVICE_URL`: URL de gerenciamento HTTP do API Gateway
+     - `AWS_SNS_MESSAGES_TOPIC_ARN`: ARN do tópico `CloudFlow_Messages`
+
+4. **`CloudFlow_SnsAuditEvent`**
+   - Role de Execução: `CloudFlow_Audit`
+   - Handler: `CloudFlow.Workers.Aws::CloudFlow.Workers.Aws.Sns.AuditEventSnsHandler::Handle`
+   - Gatilhos:
+     - **SNS**: tópico `CloudFlow_Messages`
+     - **SNS**: tópico `CloudFlow_Users`
+   - Variável de Ambiente: `AWS_WEBSOCKET_SERVICE_URL`
+
+
+### 6. Publicação do Código das Lambdas
+
+Com as funções já criadas no Console da AWS, instale a ferramenta da AWS Lambda (caso ainda não tenha):
 ```bash
 dotnet tool install -g Amazon.Lambda.Tools
 ```
 
-Execute o script de implantação na pasta `CloudFlow` para compilar e enviar as funções:
+Execute o script de publicação na pasta `CloudFlow` para compilar e atualizar o código de cada função:
 ```powershell
 ./deploy-lambda.ps1 CloudFlow_WebSocketConnect
 ./deploy-lambda.ps1 CloudFlow_WebSocketDisconnect
 ./deploy-lambda.ps1 CloudFlow_DynamoDbMessageStream
+./deploy-lambda.ps1 CloudFlow_SnsAuditEvent
 ```
 
-Handlers correspondentes:
-- `$connect`: `CloudFlow.Workers.Aws::CloudFlow.Workers.Aws.WebSocketApi.WebSocketConnectHandler::Handle`
-- `$disconnect`: `CloudFlow.Workers.Aws::CloudFlow.Workers.Aws.WebSocketApi.WebSocketDisconnectHandler::Handle`
-- DynamoDB Streams: `CloudFlow.Workers.Aws::CloudFlow.Workers.Aws.DynamoDbStreams.MessageStreamHandler::Handle`
 
-#### Configuração Adicional da Lambda `CloudFlow_DynamoDbMessageStream`:
-1. Trigger (Gatilho):
-   - Adicionar gatilho do tipo DynamoDB apontando para a tabela `CloudFlow_Messages`.
-   - Starting position: `Latest`.
-2. Variável de Ambiente:
-   - `AWS_WEBSOCKET_SERVICE_URL`: URL de gerenciamento HTTP do API Gateway (`https://{api-id}.execute-api.{region}.amazonaws.com/{stage}`).
-
-
-### 5. Variáveis de Ambiente
+### 7. Variáveis de Ambiente Locais
 Copie `CloudFlow/.env.example` para `CloudFlow/.env` e preencha as variáveis com a região, credenciais do IAM e endpoints correspondentes:
 - `AWS_WEBSOCKET_SERVICE_URL`: URL de gerenciamento (`https://{api-id}.execute-api.{region}.amazonaws.com/{stage}`)
 - `AWS_WEBSOCKET_PUBLIC_URL`: URL de conexão (`wss://{api-id}.execute-api.{region}.amazonaws.com/{stage}`)

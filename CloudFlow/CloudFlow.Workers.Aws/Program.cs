@@ -15,6 +15,7 @@ public class Program
         builder.Services.AddScoped<DynamoDbStreams.MessageStreamHandler>();
         builder.Services.AddScoped<WebSocketApi.WebSocketConnectHandler>();
         builder.Services.AddScoped<WebSocketApi.WebSocketDisconnectHandler>();
+        builder.Services.AddScoped<Sns.AuditEventSnsHandler>();
 
         var host = builder.Build();
         host.Run();

@@ -1,7 +1,9 @@
+import 'package:cloud_flow_app/cubits/audit_events_cubit.dart';
 import 'package:cloud_flow_app/cubits/config_cubit.dart';
 import 'package:cloud_flow_app/cubits/connection_cubit.dart';
 import 'package:cloud_flow_app/cubits/messages_list_cubit.dart';
 import 'package:cloud_flow_app/pages/connect/connect_page.dart';
+import 'package:cloud_flow_app/pages/messages/widgets/audit_events_drawer.dart';
 import 'package:cloud_flow_app/pages/messages/widgets/message_input_field.dart';
 import 'package:cloud_flow_app/pages/messages/widgets/messages_list.dart';
 import 'package:cloud_flow_app/widgets/brand.dart';
@@ -22,26 +24,57 @@ class MessagesPage extends StatelessWidget {
         }
         return connectionCubit;
       },
-      child: BlocProvider(
-        create: (context) {
-          final messagesListCubit = MessagesListCubit(connectionCubit: context.read<ConnectionCubit>());
-          final configState = context.read<ConfigCubit>().state;
-          if (configState is ConfigLoaded) {
-            messagesListCubit.loadRecentMessages(configState.config.apiUrl);
-          }
-          return messagesListCubit;
-        },
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider(
+            create: (context) {
+              final messagesListCubit = MessagesListCubit(connectionCubit: context.read<ConnectionCubit>());
+              final configState = context.read<ConfigCubit>().state;
+              if (configState is ConfigLoaded) {
+                messagesListCubit.loadRecentMessages(configState.config.apiUrl);
+              }
+              return messagesListCubit;
+            },
+          ),
+          BlocProvider(
+            create: (context) => AuditEventsCubit(
+              connectionCubit: context.read<ConnectionCubit>(),
+            ),
+          ),
+        ],
         child: const _MessagesView(),
       ),
     );
   }
 }
 
-class _MessagesView extends StatelessWidget {
+class _MessagesView extends StatefulWidget {
   const _MessagesView();
 
   @override
+  State<_MessagesView> createState() => _MessagesViewState();
+}
+
+class _MessagesViewState extends State<_MessagesView> {
+  static const double _largeScreenBreakpoint = 900;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  bool _isAuditPanelOpen = false;
+
+  void _toggleAuditPanel(bool isLargeScreen) {
+    if (isLargeScreen) {
+      setState(() {
+        _isAuditPanelOpen = !_isAuditPanelOpen;
+      });
+    } else {
+      _scaffoldKey.currentState?.openEndDrawer();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final isLargeScreen = screenWidth >= _largeScreenBreakpoint;
+
     return BlocListener<ConnectionCubit, WsConnectionState>(
       listener: (context, connectionState) {
         if (connectionState is WsConnectionDisconnected) {
@@ -52,6 +85,15 @@ class _MessagesView extends StatelessWidget {
       child: BlocBuilder<MessagesListCubit, MessagesListState>(
         builder: (context, state) {
           return Scaffold(
+            key: _scaffoldKey,
+            endDrawer: !isLargeScreen
+                ? Drawer(
+                    width: screenWidth < 380 ? screenWidth : 380,
+                    child: const SafeArea(
+                      child: AuditEventsDrawer(),
+                    ),
+                  )
+                : null,
             appBar: state.isSelectionMode
                 ? AppBar(
                     leading: IconButton(
@@ -86,8 +128,19 @@ class _MessagesView extends StatelessWidget {
                     title: const CloudFlowBrand(fontSize: 22),
                     actions: [
                       IconButton(
+                        tooltip: isLargeScreen
+                            ? (_isAuditPanelOpen ? 'Ocultar auditoria' : 'Exibir auditoria')
+                            : 'Auditoria de eventos',
+                        icon: Icon(
+                          _isAuditPanelOpen && isLargeScreen
+                              ? Icons.fact_check
+                              : Icons.fact_check_outlined,
+                        ),
+                        onPressed: () => _toggleAuditPanel(isLargeScreen),
+                      ),
+                      IconButton(
                         tooltip: 'Selecionar mensagens',
-                        icon: const Icon(Icons.checklist_outlined),
+                        icon: const Icon(Icons.select_all_rounded),
                         onPressed: state.messages.isEmpty
                             ? null
                             : () {
@@ -104,10 +157,20 @@ class _MessagesView extends StatelessWidget {
                     ],
                   ),
             body: SafeArea(
-              child: Column(
+              child: Row(
                 children: [
-                  if (!state.isSelectionMode) const MessageInputField(),
-                  const Expanded(child: MessagesList()),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        if (!state.isSelectionMode) const MessageInputField(),
+                        const Expanded(child: MessagesList()),
+                      ],
+                    ),
+                  ),
+                  if (isLargeScreen && _isAuditPanelOpen)
+                    AuditEventsDrawer(
+                      onClose: () => setState(() => _isAuditPanelOpen = false),
+                    ),
                 ],
               ),
             ),

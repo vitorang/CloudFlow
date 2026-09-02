@@ -7,7 +7,7 @@ namespace CloudFlow.Core.Services;
 
 public class MessageService(IMessageRepository messageRepository) : IMessageService
 {
-    private const int RecentMessagesLimit = 5;
+    private const int RecentMessagesLimit = 20;
 
     public async Task Create(CreateMessageDto dto, CancellationToken cancellationToken)
     {
