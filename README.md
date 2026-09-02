@@ -170,7 +170,6 @@ Copie `CloudFlow/.env.example` para `CloudFlow/.env` e preencha as variáveis co
 ### AWS
 - **Armazenamento de Arquivos:** Envio e compartilhamento de arquivos e imagens (AWS S3 com Presigned URLs)
 - **Processamento Assíncrono:** Exclusão assíncrona de arquivos anexados via fila (AWS SQS)
-- **Pré-visualização de Conteúdo:** Pré-visualização rica de links compartilhados (Rich Link Previews / OpenGraph)
 - **Limpeza Automática:** Expiração e exclusão automática de mensagens antigas (DynamoDB TTL)
 
 ### Azure (Planejamento de Equivalência Arquitetural)

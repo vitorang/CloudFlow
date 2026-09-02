@@ -36,11 +36,7 @@ class MessagesPage extends StatelessWidget {
               return messagesListCubit;
             },
           ),
-          BlocProvider(
-            create: (context) => AuditEventsCubit(
-              connectionCubit: context.read<ConnectionCubit>(),
-            ),
-          ),
+          BlocProvider(create: (context) => AuditEventsCubit(connectionCubit: context.read<ConnectionCubit>())),
         ],
         child: const _MessagesView(),
       ),
@@ -89,9 +85,7 @@ class _MessagesViewState extends State<_MessagesView> {
             endDrawer: !isLargeScreen
                 ? Drawer(
                     width: screenWidth < 380 ? screenWidth : 380,
-                    child: const SafeArea(
-                      child: AuditEventsDrawer(),
-                    ),
+                    child: const SafeArea(child: AuditEventsDrawer()),
                   )
                 : null,
             appBar: state.isSelectionMode
@@ -116,9 +110,7 @@ class _MessagesViewState extends State<_MessagesView> {
                             : () {
                                 final configState = context.read<ConfigCubit>().state;
                                 if (configState is ConfigLoaded) {
-                                  context
-                                      .read<MessagesListCubit>()
-                                      .deleteSelectedMessages(configState.config.apiUrl);
+                                  context.read<MessagesListCubit>().deleteSelectedMessages(configState.config.apiUrl);
                                 }
                               },
                       ),
@@ -128,17 +120,6 @@ class _MessagesViewState extends State<_MessagesView> {
                     title: const CloudFlowBrand(fontSize: 22),
                     actions: [
                       IconButton(
-                        tooltip: isLargeScreen
-                            ? (_isAuditPanelOpen ? 'Ocultar auditoria' : 'Exibir auditoria')
-                            : 'Auditoria de eventos',
-                        icon: Icon(
-                          _isAuditPanelOpen && isLargeScreen
-                              ? Icons.fact_check
-                              : Icons.fact_check_outlined,
-                        ),
-                        onPressed: () => _toggleAuditPanel(isLargeScreen),
-                      ),
-                      IconButton(
                         tooltip: 'Selecionar mensagens',
                         icon: const Icon(Icons.select_all_rounded),
                         onPressed: state.messages.isEmpty
@@ -146,6 +127,13 @@ class _MessagesViewState extends State<_MessagesView> {
                             : () {
                                 context.read<MessagesListCubit>().toggleSelection(state.messages.first.id);
                               },
+                      ),
+                      IconButton(
+                        tooltip: isLargeScreen
+                            ? (_isAuditPanelOpen ? 'Ocultar auditoria' : 'Exibir auditoria')
+                            : 'Auditoria de eventos',
+                        icon: Icon(_isAuditPanelOpen && isLargeScreen ? Icons.fact_check : Icons.fact_check_outlined),
+                        onPressed: () => _toggleAuditPanel(isLargeScreen),
                       ),
                       IconButton(
                         tooltip: 'Desconectar',
@@ -168,9 +156,7 @@ class _MessagesViewState extends State<_MessagesView> {
                     ),
                   ),
                   if (isLargeScreen && _isAuditPanelOpen)
-                    AuditEventsDrawer(
-                      onClose: () => setState(() => _isAuditPanelOpen = false),
-                    ),
+                    AuditEventsDrawer(onClose: () => setState(() => _isAuditPanelOpen = false)),
                 ],
               ),
             ),

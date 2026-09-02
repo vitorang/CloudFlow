@@ -120,6 +120,7 @@ class _MessagesListState extends State<MessagesList> {
                         final isSelected = state.selectedMessageIds.contains(message.id);
 
                         return MessageCard(
+                          key: ValueKey(message.id),
                           message: message,
                           isSelectionMode: state.isSelectionMode,
                           isSelected: isSelected,
