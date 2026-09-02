@@ -72,7 +72,6 @@ public class MessageStreamHandler : IDisposable
             var task = record.EventName switch
             {
                 "INSERT" => HandleCreated(record.Dynamodb.NewImage, CancellationToken.None),
-                "MODIFY" => HandleUpdated(record.Dynamodb.NewImage, record.Dynamodb.OldImage, CancellationToken.None),
                 "REMOVE" => HandleDeleted(record.Dynamodb.OldImage, CancellationToken.None),
                 _ => Task.CompletedTask
             };
@@ -99,14 +98,6 @@ public class MessageStreamHandler : IDisposable
             Payload: messageDto
         );
         await auditNotificationService.Publish(auditDto, cancellationToken);
-    }
-
-    private async Task HandleUpdated(
-        Dictionary<string, Amazon.Lambda.DynamoDBEvents.DynamoDBEvent.AttributeValue> newImage,
-        Dictionary<string, Amazon.Lambda.DynamoDBEvents.DynamoDBEvent.AttributeValue> oldImage,
-        CancellationToken cancellationToken)
-    {
-        await Task.CompletedTask;
     }
 
     private async Task HandleDeleted(

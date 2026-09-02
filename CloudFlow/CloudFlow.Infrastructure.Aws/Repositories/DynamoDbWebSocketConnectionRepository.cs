@@ -28,6 +28,6 @@ public class DynamoDbWebSocketConnectionRepository(IDynamoDBContext context) : I
         var search = context.ScanAsync<WebSocketConnectionItem>(conditions);
         var items = await search.GetNextSetAsync(cancellationToken);
 
-        return items.Select(item => item.ConnectionId).ToList();
+        return [.. items.Select(item => item.ConnectionId)];
     }
 }

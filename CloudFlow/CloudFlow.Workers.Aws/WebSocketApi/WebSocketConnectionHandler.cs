@@ -27,7 +27,9 @@ public class WebSocketConnectionHandler : IDisposable
             ?? throw new InvalidOperationException($"Variável de ambiente {AwsEnvironmentVariables.SnsUsersTopicArn} não foi definida.");
 
         dynamoClient = new AmazonDynamoDBClient();
-        dynamoContext = new DynamoDBContext(dynamoClient);
+        dynamoContext = new DynamoDBContextBuilder()
+            .WithDynamoDBClient(() => dynamoClient)
+            .Build();
         connectionRepository = new DynamoDbWebSocketConnectionRepository(dynamoContext);
 
         snsClient = new AmazonSimpleNotificationServiceClient();
@@ -50,7 +52,7 @@ public class WebSocketConnectionHandler : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    public async Task<APIGatewayProxyResponse> Connect(APIGatewayProxyRequest request, ILambdaContext context)
+    public async Task<APIGatewayProxyResponse> Connect(APIGatewayProxyRequest request, ILambdaContext _)
     {
         var connectionId = request.RequestContext?.ConnectionId;
 
@@ -83,7 +85,7 @@ public class WebSocketConnectionHandler : IDisposable
         };
     }
 
-    public async Task<APIGatewayProxyResponse> Disconnect(APIGatewayProxyRequest request, ILambdaContext context)
+    public async Task<APIGatewayProxyResponse> Disconnect(APIGatewayProxyRequest request, ILambdaContext _)
     {
         var connectionId = request.RequestContext?.ConnectionId;
 

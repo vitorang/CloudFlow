@@ -27,8 +27,9 @@ class ConnectionCubit extends Cubit<WsConnectionState> {
   ConnectionCubit() : super(WsConnectionInitial());
 
   void connect(String webSocketUrl) {
-    if (state is WsConnectionConnected || state is WsConnectionConnecting)
+    if (state is WsConnectionConnected || state is WsConnectionConnecting) {
       return;
+    }
 
     emit(WsConnectionConnecting());
 

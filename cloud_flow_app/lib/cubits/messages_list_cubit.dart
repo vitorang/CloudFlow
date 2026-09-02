@@ -155,7 +155,7 @@ class MessagesListCubit extends Cubit<MessagesListState> {
 
     try {
       await _messagesService.deleteMessages(apiUrl: apiUrl, ids: idsToDelete);
-    } catch (e) {}
+    } catch (_) {}
   }
 
   void _addMessage(MessageItem message) {
