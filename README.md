@@ -81,6 +81,7 @@ Crie as tabelas no modo On-Demand:
 - `CloudFlow_Messages`
   - Partition key: `Id` (String)
   - DynamoDB Streams: Imagens novas e antigas / New and old images
+  - Tempo de Vida/Time to Live (TTL): Ativado no atributo `ExpiresAt`
 
 - `CloudFlow_WebSocketConnections`
   - Partition key: `ConnectionId` (String)
@@ -170,7 +171,6 @@ Copie `CloudFlow/.env.example` para `CloudFlow/.env` e preencha as variáveis co
 ### AWS
 - **Armazenamento de Arquivos:** Envio e compartilhamento de arquivos e imagens (AWS S3 com Presigned URLs)
 - **Processamento Assíncrono:** Exclusão assíncrona de arquivos anexados via fila (AWS SQS)
-- **Limpeza Automática:** Expiração e exclusão automática de mensagens antigas (DynamoDB TTL)
 
 ### Azure (Planejamento de Equivalência Arquitetural)
 - **Comunicação em Tempo Real:** Substituição do API Gateway WebSocket pelo **Azure Web PubSub** gerenciando conexões de clientes

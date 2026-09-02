@@ -18,8 +18,11 @@ public class MessageService(IMessageRepository messageRepository) : IMessageServ
     public async Task<RecentMessagesResponseDto> GetRecent(DateTime before, CancellationToken cancellationToken)
     {
         var messages = await messageRepository.GetRecent(before, RecentMessagesLimit + 1, cancellationToken);
-        var hasPreviousMessages = messages.Count > RecentMessagesLimit;
-        var slicedMessages = messages.Take(RecentMessagesLimit).ToList();
+        var currentUnixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        var activeMessages = messages.Where(m => !m.ExpiresAt.HasValue || m.ExpiresAt.Value > currentUnixTimestamp).ToList();
+
+        var hasPreviousMessages = activeMessages.Count > RecentMessagesLimit;
+        var slicedMessages = activeMessages.Take(RecentMessagesLimit).ToList();
 
         var responseDtos = slicedMessages.Select(m => m.ToResponseDto()).ToList();
         return new RecentMessagesResponseDto(responseDtos, hasPreviousMessages);

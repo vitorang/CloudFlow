@@ -131,13 +131,17 @@ public class MessageStreamHandler : IDisposable
             return null;
 
         var author = image.TryGetValue("Author", out var authorAttribute) ? authorAttribute.S : string.Empty;
+        long? expiresAt = image.TryGetValue("ExpiresAt", out var expiresAtAttribute) && long.TryParse(expiresAtAttribute.N, out var parsedExpiresAt)
+            ? parsedExpiresAt
+            : null;
 
         return new MessageResponseDto(
             Id: messageIdAttribute.S,
             Author: author,
             Text: textAttribute.S,
             Type: (MessageType)int.Parse(typeAttribute.N),
-            CreatedAt: DateTime.Parse(createdAtAttribute.S)
+            CreatedAt: DateTime.Parse(createdAtAttribute.S),
+            ExpiresAt: expiresAt
         );
     }
 }

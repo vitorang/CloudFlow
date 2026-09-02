@@ -153,9 +153,7 @@ class MessagesListCubit extends Cubit<MessagesListState> {
     final idsToDelete = state.selectedMessageIds.toList();
     clearSelection();
 
-    try {
-      await _messagesService.deleteMessages(apiUrl: apiUrl, ids: idsToDelete);
-    } catch (_) {}
+    await _messagesService.deleteMessages(apiUrl: apiUrl, ids: idsToDelete);
   }
 
   void _addMessage(MessageItem message) {

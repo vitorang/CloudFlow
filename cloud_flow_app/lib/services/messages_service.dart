@@ -14,6 +14,7 @@ class MessagesService {
     required String author,
     required String text,
     MessageType type = MessageType.text,
+    int? expiresInHours,
   }) async {
     final uri = Uri.parse('$apiUrl/api/messages');
 
@@ -24,6 +25,7 @@ class MessagesService {
         'author': author,
         'text': text,
         'type': type.value,
+        'expiresInHours': expiresInHours,
       }),
     );
 

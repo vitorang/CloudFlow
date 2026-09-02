@@ -203,6 +203,17 @@ class MessageCard extends StatelessWidget {
                         '•  ${_formatTimestamp(message.createdAt)}',
                         style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.outline, fontSize: 11),
                       ),
+                      if (message.expiresAt != null) ...[
+                        const SizedBox(width: 6),
+                        Tooltip(
+                          message: 'Expira em ${_formatTimestamp(DateTime.fromMillisecondsSinceEpoch(message.expiresAt! * 1000))}',
+                          child: Icon(
+                            Icons.timer_outlined,
+                            size: 13,
+                            color: Colors.orange.withValues(alpha: 0.85),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                   const SizedBox(height: 4),

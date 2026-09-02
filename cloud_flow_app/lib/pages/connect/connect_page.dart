@@ -1,6 +1,7 @@
 import 'package:cloud_flow_app/cubits/config_cubit.dart';
-import 'package:cloud_flow_app/widgets/brand.dart';
+import 'package:cloud_flow_app/extensions/context_extensions.dart';
 import 'package:cloud_flow_app/pages/messages/messages_page.dart';
+import 'package:cloud_flow_app/widgets/brand.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -33,29 +34,17 @@ class _ConnectPageState extends State<ConnectPage> {
 
   bool _validateUsername(String username) {
     if (username.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Informe um nome de usuário.'), behavior: SnackBarBehavior.floating));
+      context.showSnackBar('Informe um nome de usuário.');
       return false;
     }
 
     if (username.contains(' ')) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('O nome de usuário não pode conter espaços.'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      context.showSnackBar('O nome de usuário não pode conter espaços.');
       return false;
     }
 
     if (username.length > 12) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('O nome de usuário deve ter no máximo 12 caracteres.'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      context.showSnackBar('O nome de usuário deve ter no máximo 12 caracteres.');
       return false;
     }
 
@@ -69,9 +58,7 @@ class _ConnectPageState extends State<ConnectPage> {
     if (!_validateUsername(usernameText)) return;
 
     if (urlText.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Informe um endereço válido.'), behavior: SnackBarBehavior.floating));
+      context.showSnackBar('Informe um endereço válido.');
       return;
     }
 
@@ -84,10 +71,7 @@ class _ConnectPageState extends State<ConnectPage> {
       body: BlocConsumer<ConfigCubit, ConfigState>(
         listener: (context, state) {
           if (state is ConfigError) {
-            ScaffoldMessenger.of(context).hideCurrentSnackBar();
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text(state.message), behavior: SnackBarBehavior.floating));
+            context.showSnackBar(state.message);
           } else if (state is ConfigLoaded) {
             ScaffoldMessenger.of(context).hideCurrentSnackBar();
             Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const MessagesPage()));

@@ -5,7 +5,8 @@ namespace CloudFlow.Core.Dtos;
 public record CreateMessageDto(
     string Author,
     string Text,
-    MessageType Type
+    MessageType Type,
+    int? ExpiresInHours = null
 );
 
 public record MessageResponseDto(
@@ -13,5 +14,6 @@ public record MessageResponseDto(
     string Author,
     string Text,
     MessageType Type,
-    DateTime CreatedAt
+    DateTime CreatedAt,
+    long? ExpiresAt = null
 );

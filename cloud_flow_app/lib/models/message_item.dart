@@ -6,6 +6,7 @@ class MessageItem {
   final String text;
   final MessageType type;
   final DateTime createdAt;
+  final int? expiresAt;
 
   const MessageItem({
     required this.id,
@@ -13,6 +14,7 @@ class MessageItem {
     required this.text,
     required this.type,
     required this.createdAt,
+    this.expiresAt,
   });
 
   factory MessageItem.fromJson(Map<String, dynamic> json) {
@@ -28,6 +30,7 @@ class MessageItem {
       text: json['text'] as String? ?? '',
       type: type,
       createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.now(),
+      expiresAt: json['expiresAt'] as int?,
     );
   }
 }

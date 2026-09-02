@@ -1,5 +1,6 @@
 import 'package:cloud_flow_app/cubits/config_cubit.dart';
 import 'package:cloud_flow_app/cubits/connection_cubit.dart';
+import 'package:cloud_flow_app/extensions/context_extensions.dart';
 import 'package:cloud_flow_app/services/messages_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -18,6 +19,8 @@ class _MessageInputFieldState extends State<MessageInputField> {
   final FocusNode _focusNode = FocusNode();
   final MessagesService _messagesService = MessagesService();
   bool _isSending = false;
+
+  int? _selectedExpiresInHours;
 
   @override
   void dispose() {
@@ -44,16 +47,10 @@ class _MessageInputFieldState extends State<MessageInputField> {
         apiUrl: configState.config.apiUrl,
         author: configState.config.username,
         text: text,
+        expiresInHours: _selectedExpiresInHours,
       );
     } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Erro ao enviar mensagem.'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
+      if (mounted) context.showSnackBar('Erro ao enviar mensagem.');
     } finally {
       if (mounted) {
         setState(() => _isSending = false);
@@ -65,15 +62,15 @@ class _MessageInputFieldState extends State<MessageInputField> {
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
 
-    final isHardwareKeyboard = kIsWeb ||
+    final isHardwareKeyboard =
+        kIsWeb ||
         defaultTargetPlatform == TargetPlatform.windows ||
         defaultTargetPlatform == TargetPlatform.linux ||
         defaultTargetPlatform == TargetPlatform.macOS;
 
     if (!isHardwareKeyboard) return KeyEventResult.ignored;
 
-    final isEnter = event.logicalKey == LogicalKeyboardKey.enter ||
-        event.logicalKey == LogicalKeyboardKey.numpadEnter;
+    final isEnter = event.logicalKey == LogicalKeyboardKey.enter || event.logicalKey == LogicalKeyboardKey.numpadEnter;
 
     if (isEnter) {
       final isShiftPressed = HardwareKeyboard.instance.isShiftPressed;
@@ -87,6 +84,15 @@ class _MessageInputFieldState extends State<MessageInputField> {
     return KeyEventResult.ignored;
   }
 
+  String _getExpirationTooltip() {
+    return switch (_selectedExpiresInHours) {
+      1 => 'Expira em 1 hora',
+      24 => 'Expira em 1 dia',
+      168 => 'Expira em 1 semana',
+      _ => 'Definir expiração',
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -94,6 +100,7 @@ class _MessageInputFieldState extends State<MessageInputField> {
     return BlocBuilder<ConnectionCubit, WsConnectionState>(
       builder: (context, connectionState) {
         final isConnected = connectionState is WsConnectionConnected;
+        final hasExpiration = _selectedExpiresInHours != null;
 
         return Center(
           child: ConstrainedBox(
@@ -104,9 +111,7 @@ class _MessageInputFieldState extends State<MessageInputField> {
                 decoration: BoxDecoration(
                   color: theme.colorScheme.surfaceContainerHigh,
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(
-                    color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
-                  ),
+                  border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3)),
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 child: Row(
@@ -129,14 +134,65 @@ class _MessageInputFieldState extends State<MessageInputField> {
                           keyboardType: TextInputType.multiline,
                           textInputAction: TextInputAction.newline,
                           decoration: InputDecoration(
-                            hintText: isConnected
-                                ? 'Digite uma mensagem...'
-                                : 'Conectando ao servidor...',
+                            hintText: isConnected ? 'Digite uma mensagem...' : 'Conectando ao servidor...',
                             border: InputBorder.none,
                             contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                           ),
                         ),
                       ),
+                    ),
+                    PopupMenuButton<int>(
+                      tooltip: _getExpirationTooltip(),
+                      enabled: isConnected,
+                      icon: Icon(
+                        hasExpiration ? Icons.timer : Icons.timer_outlined,
+                        color: hasExpiration ? Colors.orange : theme.colorScheme.onSurfaceVariant,
+                      ),
+                      onSelected: (hours) {
+                        setState(() => _selectedExpiresInHours = hours > 0 ? hours : null);
+                      },
+                      itemBuilder: (context) => [
+                        PopupMenuItem<int>(
+                          value: 0,
+                          child: Text(
+                            'Nenhum',
+                            style: TextStyle(
+                              color: _selectedExpiresInHours == null ? theme.colorScheme.primary : null,
+                              fontWeight: _selectedExpiresInHours == null ? FontWeight.bold : FontWeight.normal,
+                            ),
+                          ),
+                        ),
+                        PopupMenuItem<int>(
+                          value: 1,
+                          child: Text(
+                            '1 hora',
+                            style: TextStyle(
+                              color: _selectedExpiresInHours == 1 ? theme.colorScheme.primary : null,
+                              fontWeight: _selectedExpiresInHours == 1 ? FontWeight.bold : FontWeight.normal,
+                            ),
+                          ),
+                        ),
+                        PopupMenuItem<int>(
+                          value: 24,
+                          child: Text(
+                            '1 dia',
+                            style: TextStyle(
+                              color: _selectedExpiresInHours == 24 ? theme.colorScheme.primary : null,
+                              fontWeight: _selectedExpiresInHours == 24 ? FontWeight.bold : FontWeight.normal,
+                            ),
+                          ),
+                        ),
+                        PopupMenuItem<int>(
+                          value: 168,
+                          child: Text(
+                            '1 semana',
+                            style: TextStyle(
+                              color: _selectedExpiresInHours == 168 ? theme.colorScheme.primary : null,
+                              fontWeight: _selectedExpiresInHours == 168 ? FontWeight.bold : FontWeight.normal,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     IconButton(
                       tooltip: 'Enviar mensagem',
@@ -144,10 +200,7 @@ class _MessageInputFieldState extends State<MessageInputField> {
                           ? SizedBox(
                               width: 20,
                               height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: theme.colorScheme.primary,
-                              ),
+                              child: CircularProgressIndicator(strokeWidth: 2, color: theme.colorScheme.primary),
                             )
                           : Icon(
                               Icons.send,

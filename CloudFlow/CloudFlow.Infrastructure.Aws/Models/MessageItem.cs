@@ -20,4 +20,7 @@ public class MessageItem
 
     [DynamoDBProperty]
     public string CreatedAt { get; set; } = string.Empty;
+
+    [DynamoDBProperty]
+    public long? ExpiresAt { get; set; }
 }

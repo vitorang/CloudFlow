@@ -2,6 +2,7 @@ import 'package:cloud_flow_app/cubits/audit_events_cubit.dart';
 import 'package:cloud_flow_app/cubits/config_cubit.dart';
 import 'package:cloud_flow_app/cubits/connection_cubit.dart';
 import 'package:cloud_flow_app/cubits/messages_list_cubit.dart';
+import 'package:cloud_flow_app/extensions/context_extensions.dart';
 import 'package:cloud_flow_app/pages/connect/connect_page.dart';
 import 'package:cloud_flow_app/pages/messages/widgets/audit_events_drawer.dart';
 import 'package:cloud_flow_app/pages/messages/widgets/message_input_field.dart';
@@ -107,10 +108,16 @@ class _MessagesViewState extends State<_MessagesView> {
                         icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
                         onPressed: state.selectedMessageIds.isEmpty
                             ? null
-                            : () {
+                            : () async {
                                 final configState = context.read<ConfigCubit>().state;
                                 if (configState is ConfigLoaded) {
-                                  context.read<MessagesListCubit>().deleteSelectedMessages(configState.config.apiUrl);
+                                  try {
+                                    await context.read<MessagesListCubit>().deleteSelectedMessages(
+                                      configState.config.apiUrl,
+                                    );
+                                  } catch (_) {
+                                    if (context.mounted) context.showSnackBar('Erro ao excluir mensagem.');
+                                  }
                                 }
                               },
                       ),

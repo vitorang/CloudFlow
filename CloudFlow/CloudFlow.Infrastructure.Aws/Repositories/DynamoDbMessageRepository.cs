@@ -17,7 +17,8 @@ public class DynamoDbMessageRepository(IDynamoDBContext context) : IMessageRepos
             Author = message.Author,
             Text = message.Text,
             Type = (int)message.Type,
-            CreatedAt = message.CreatedAt.ToString("O")
+            CreatedAt = message.CreatedAt.ToString("O"),
+            ExpiresAt = message.ExpiresAt
         };
 
         await context.SaveAsync(item, cancellationToken);
@@ -42,7 +43,8 @@ public class DynamoDbMessageRepository(IDynamoDBContext context) : IMessageRepos
                 Author = item.Author,
                 Text = item.Text,
                 Type = (MessageType)item.Type,
-                CreatedAt = DateTime.Parse(item.CreatedAt)
+                CreatedAt = DateTime.Parse(item.CreatedAt),
+                ExpiresAt = item.ExpiresAt
             })];
     }
 
