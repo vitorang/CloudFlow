@@ -22,12 +22,16 @@ class ConfigError extends ConfigState {
 
 class ConfigCubit extends Cubit<ConfigState> {
   final http.Client _client;
+  String lastUsername = '';
+  String lastUrl = 'http://localhost:8080';
 
   ConfigCubit({http.Client? client})
       : _client = client ?? http.Client(),
         super(ConfigInitial());
 
   Future<void> connect(String rawUrl, {String username = ''}) async {
+    lastUrl = rawUrl.trim();
+    lastUsername = username.trim();
     emit(ConfigLoading());
 
     try {

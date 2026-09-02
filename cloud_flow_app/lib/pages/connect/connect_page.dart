@@ -13,8 +13,16 @@ class ConnectPage extends StatefulWidget {
 }
 
 class _ConnectPageState extends State<ConnectPage> {
-  final TextEditingController _urlController = TextEditingController(text: 'http://localhost:8080');
-  final TextEditingController _usernameController = TextEditingController();
+  late final TextEditingController _urlController;
+  late final TextEditingController _usernameController;
+
+  @override
+  void initState() {
+    super.initState();
+    final configCubit = context.read<ConfigCubit>();
+    _urlController = TextEditingController(text: configCubit.lastUrl);
+    _usernameController = TextEditingController(text: configCubit.lastUsername);
+  }
 
   @override
   void dispose() {
