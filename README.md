@@ -27,17 +27,17 @@ sequenceDiagram
     API (.NET)->>DynamoDB: Persiste mensagem<br/>(com TTL opcional)
     DynamoDB-->>Lambda Streams: Dispara evento INSERT
     Lambda Streams->>API Gateway WS: Broadcast<br/>(MessageCreated)
-    API Gateway WS-->>Flutter App: Notifica todos os<br/>clientes conectados
+    API Gateway WS-->>Flutter App: Notifica clientes conectados
 ```
 
 ### 2. Auditoria Desacoplada (Pub/Sub com SNS)
 ```mermaid
 sequenceDiagram
     autonumber
-    Lambda Streams->>SNS (Tópico): Publica evento de negócio
+    Lambda Streams->>SNS (Tópico): Publica evento
     SNS (Tópico)-->>Lambda Auditoria: Dispara função inscrita
     Lambda Auditoria->>API Gateway WS: Broadcast<br/>(AuditEvent)
-    API Gateway WS-->>Flutter App: Exibe evento no painel lateral
+    API Gateway WS-->>Flutter App: Exibe evento<br/>no painel lateral
 ```
 
 ### 3. Limpeza Automática (DynamoDB TTL)
@@ -47,7 +47,7 @@ sequenceDiagram
     DynamoDB-->>DynamoDB: Identifica item expirado pelo TTL
     DynamoDB-->>Lambda Streams: Dispara evento REMOVE
     Lambda Streams->>API Gateway WS: Broadcast<br/>(MessageDeleted)
-    API Gateway WS-->>Flutter App: Notifica exclusão a todos<br/>os clientes conectados
+    API Gateway WS-->>Flutter App: Notifica clientes<br/>conectados
 ```
 
 
