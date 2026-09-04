@@ -5,6 +5,7 @@ import 'package:cloud_flow_app/widgets/brand.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 class ConnectPage extends StatefulWidget {
   const ConnectPage({super.key});
@@ -97,7 +98,7 @@ class _ConnectPageState extends State<ConnectPage> {
                       decoration: const InputDecoration(
                         labelText: 'Endereço',
                         hintText: 'http://localhost:8080',
-                        prefixIcon: Icon(Icons.dns_outlined),
+                        prefixIcon: Icon(Symbols.dns),
                         border: OutlineInputBorder(),
                       ),
                       keyboardType: TextInputType.url,
@@ -112,7 +113,7 @@ class _ConnectPageState extends State<ConnectPage> {
                       inputFormatters: [FilteringTextInputFormatter.deny(RegExp(r'\s'))],
                       decoration: const InputDecoration(
                         labelText: 'Nome de usuário',
-                        prefixIcon: Icon(Icons.person_outline),
+                        prefixIcon: Icon(Symbols.person),
                         border: OutlineInputBorder(),
                         counterText: '',
                       ),

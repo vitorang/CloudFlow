@@ -10,6 +10,7 @@ import 'package:cloud_flow_app/pages/messages/widgets/messages_list.dart';
 import 'package:cloud_flow_app/widgets/brand.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 class MessagesPage extends StatelessWidget {
   const MessagesPage({super.key});
@@ -93,7 +94,7 @@ class _MessagesViewState extends State<_MessagesView> {
                 ? AppBar(
                     leading: IconButton(
                       tooltip: 'Cancelar seleção',
-                      icon: const Icon(Icons.close),
+                      icon: const Icon(Symbols.close),
                       onPressed: () {
                         context.read<MessagesListCubit>().clearSelection();
                       },
@@ -105,7 +106,7 @@ class _MessagesViewState extends State<_MessagesView> {
                     actions: [
                       IconButton(
                         tooltip: 'Excluir selecionadas',
-                        icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                        icon: const Icon(Symbols.delete, color: Colors.redAccent),
                         onPressed: state.selectedMessageIds.isEmpty
                             ? null
                             : () async {
@@ -128,7 +129,7 @@ class _MessagesViewState extends State<_MessagesView> {
                     actions: [
                       IconButton(
                         tooltip: 'Selecionar mensagens',
-                        icon: const Icon(Icons.select_all_rounded),
+                        icon: const Icon(Symbols.select_all),
                         onPressed: state.messages.isEmpty
                             ? null
                             : () {
@@ -139,12 +140,12 @@ class _MessagesViewState extends State<_MessagesView> {
                         tooltip: isLargeScreen
                             ? (_isAuditPanelOpen ? 'Ocultar auditoria' : 'Exibir auditoria')
                             : 'Auditoria de eventos',
-                        icon: Icon(_isAuditPanelOpen && isLargeScreen ? Icons.fact_check : Icons.fact_check_outlined),
+                        icon: Icon(Symbols.fact_check, fill: _isAuditPanelOpen && isLargeScreen ? 1 : 0),
                         onPressed: () => _toggleAuditPanel(isLargeScreen),
                       ),
                       IconButton(
                         tooltip: 'Desconectar',
-                        icon: const Icon(Icons.logout),
+                        icon: const Icon(Symbols.logout),
                         onPressed: () {
                           context.read<ConnectionCubit>().disconnect();
                         },

@@ -4,6 +4,7 @@ import 'package:cloud_flow_app/pages/messages/widgets/link_preview_card.dart';
 import 'package:cloud_flow_app/pages/messages/widgets/message_attachment_view.dart';
 import 'package:cloud_flow_app/pages/messages/widgets/message_text_with_links.dart';
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 class _AuthorTheme {
   final IconData icon;
@@ -14,21 +15,21 @@ class _AuthorTheme {
 
 _AuthorTheme _getAuthorTheme(String author) {
   const icons = [
-    Icons.wb_sunny_outlined,
-    Icons.cloud_outlined,
-    Icons.star_outline,
-    Icons.ac_unit,
-    Icons.bolt_outlined,
-    Icons.dark_mode_outlined,
-    Icons.cyclone,
-    Icons.water_drop_outlined,
+    Symbols.wb_sunny,
+    Symbols.cloud,
+    Symbols.star,
+    Symbols.ac_unit,
+    Symbols.bolt,
+    Symbols.dark_mode,
+    Symbols.cyclone,
+    Symbols.water_drop,
   ];
 
   const colors = [Colors.red, Colors.orange, Colors.green, Colors.blue, Colors.purpleAccent, Colors.lime, Colors.grey];
 
   final trimmed = author.trim().toLowerCase();
   if (trimmed.isEmpty) {
-    return const _AuthorTheme(Icons.cloud_outlined, Colors.grey);
+    return const _AuthorTheme(Symbols.cloud, Colors.grey);
   }
 
   final seed = trimmed.codeUnits.fold<int>(0, (prev, elem) {
@@ -108,7 +109,7 @@ class MessageCard extends StatelessWidget {
             if (isSelectionMode)
               IconButton(
                 icon: Icon(
-                  isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
+                  isSelected ? Symbols.check_circle : Symbols.radio_button_unchecked,
                   color: isSelected ? theme.colorScheme.primary : theme.colorScheme.outline,
                   size: 24,
                 ),
@@ -146,8 +147,8 @@ class MessageCard extends StatelessWidget {
                         Tooltip(
                           message: 'Expira em ${_formatTimestamp(DateTime.fromMillisecondsSinceEpoch(message.expiresAt! * 1000))}',
                           child: Icon(
-                            Icons.timer_outlined,
-                            size: 13,
+                            Symbols.timer,
+                            size: 14,
                             color: Colors.orange.withValues(alpha: 0.85),
                           ),
                         ),
@@ -162,7 +163,7 @@ class MessageCard extends StatelessWidget {
                     ),
                   ],
                   if (message.attachmentUrl != null) ...[
-                    SizedBox(height: hasText ? 8 : 4),
+                    const SizedBox(height: 8),
                     MessageAttachmentView(
                       attachmentUrl: message.attachmentUrl!,
                       thumbnailUrl: message.thumbnailUrl,

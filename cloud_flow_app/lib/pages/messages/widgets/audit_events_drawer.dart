@@ -3,6 +3,7 @@ import 'package:cloud_flow_app/cubits/audit_events_cubit.dart';
 import 'package:cloud_flow_app/models/audit_event_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 class AuditEventsDrawer extends StatelessWidget {
   final VoidCallback? onClose;
@@ -40,7 +41,7 @@ class AuditEventsDrawer extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const Icon(Icons.fact_check_outlined, size: 22),
+                const Icon(Symbols.fact_check, size: 22),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
@@ -54,7 +55,7 @@ class AuditEventsDrawer extends StatelessWidget {
                   builder: (context, state) {
                     if (state.events.isEmpty) return const SizedBox.shrink();
                     return IconButton(
-                      icon: const Icon(Icons.clear_all, size: 20),
+                      icon: const Icon(Symbols.clear_all, size: 20),
                       tooltip: 'Limpar eventos',
                       onPressed: () {
                         context.read<AuditEventsCubit>().clearEvents();
@@ -64,7 +65,7 @@ class AuditEventsDrawer extends StatelessWidget {
                 ),
                 if (onClose != null)
                   IconButton(
-                    icon: const Icon(Icons.close, size: 20),
+                    icon: const Icon(Symbols.close, size: 20),
                     tooltip: 'Fechar',
                     onPressed: onClose,
                   ),
@@ -80,7 +81,7 @@ class AuditEventsDrawer extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          Icons.history_toggle_off,
+                          Symbols.history_toggle_off,
                           size: 48,
                           color: theme.colorScheme.outline.withValues(alpha: 0.5),
                         ),

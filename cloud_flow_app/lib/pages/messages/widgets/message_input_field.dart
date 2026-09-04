@@ -9,6 +9,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 class _SelectedAttachment {
   final String name;
@@ -257,12 +258,12 @@ class _MessageInputFieldState extends State<MessageInputField> {
                     ),
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         IconButton(
                           tooltip: hasAttachment ? 'Descartar anexo' : 'Anexar arquivo',
                           icon: Icon(
-                            hasAttachment ? Icons.link_off : Icons.attach_file,
+                            hasAttachment ? Symbols.attach_file_off : Symbols.attach_file,
                             color: hasAttachment ? theme.colorScheme.error : null,
                           ),
                           onPressed: (isConnected && !_isSending) ? _pickAttachment : null,
@@ -285,7 +286,8 @@ class _MessageInputFieldState extends State<MessageInputField> {
                                     ? 'Digite uma mensagem...'
                                     : 'Conectando ao servidor...',
                                 border: InputBorder.none,
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                isDense: true,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
                               ),
                             ),
                           ),
@@ -294,7 +296,7 @@ class _MessageInputFieldState extends State<MessageInputField> {
                           tooltip: _getExpirationTooltip(),
                           enabled: isConnected && !_isSending,
                           icon: Icon(
-                            hasExpiration ? Icons.timer : Icons.timer_outlined,
+                            hasExpiration ? Symbols.timer : Symbols.timer,
                             color: hasExpiration ? Colors.orange : theme.colorScheme.onSurfaceVariant,
                           ),
                           onSelected: (hours) {
@@ -352,7 +354,7 @@ class _MessageInputFieldState extends State<MessageInputField> {
                                   child: CircularProgressIndicator(strokeWidth: 2, color: theme.colorScheme.primary),
                                 )
                               : Icon(
-                                  Icons.send,
+                                  Symbols.send,
                                   color: (isConnected && !_isSending)
                                       ? theme.colorScheme.primary
                                       : theme.colorScheme.onSurface.withValues(alpha: 0.38),
@@ -369,10 +371,10 @@ class _MessageInputFieldState extends State<MessageInputField> {
                         children: [
                           Icon(
                             _thumbnailService.isImage(_selectedAttachment!.extension)
-                                ? Icons.image_outlined
+                                ? Symbols.image
                                 : _thumbnailService.isVideo(_selectedAttachment!.extension)
-                                ? Icons.videocam_outlined
-                                : Icons.insert_drive_file_outlined,
+                                ? Symbols.videocam
+                                : Symbols.draft,
                             size: 14,
                             color: theme.colorScheme.outline,
                           ),

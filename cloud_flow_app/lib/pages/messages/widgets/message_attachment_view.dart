@@ -1,16 +1,13 @@
 import 'package:cloud_flow_app/constants/media_formats.dart';
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class MessageAttachmentView extends StatelessWidget {
   final String attachmentUrl;
   final String? thumbnailUrl;
 
-  const MessageAttachmentView({
-    super.key,
-    required this.attachmentUrl,
-    this.thumbnailUrl,
-  });
+  const MessageAttachmentView({super.key, required this.attachmentUrl, this.thumbnailUrl});
 
   Future<void> _openAttachment() async {
     final uri = Uri.tryParse(attachmentUrl);
@@ -33,6 +30,7 @@ class MessageAttachmentView extends StatelessWidget {
           child: InkWell(
             mouseCursor: SystemMouseCursors.click,
             onTap: _openAttachment,
+            borderRadius: BorderRadius.circular(12),
             child: Stack(
               alignment: Alignment.center,
               children: [
@@ -46,9 +44,7 @@ class MessageAttachmentView extends StatelessWidget {
                       height: 120,
                       color: theme.colorScheme.surfaceContainerHighest,
                       padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: Center(
-                        child: Icon(Icons.broken_image, color: theme.colorScheme.outline),
-                      ),
+                      child: Center(child: Icon(Symbols.broken_image, color: theme.colorScheme.outline)),
                     );
                   },
                   loadingBuilder: (context, child, loadingProgress) {
@@ -58,11 +54,7 @@ class MessageAttachmentView extends StatelessWidget {
                       color: theme.colorScheme.surfaceContainerHighest,
                       padding: const EdgeInsets.symmetric(horizontal: 24),
                       child: const Center(
-                        child: SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
+                        child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)),
                       ),
                     );
                   },
@@ -76,7 +68,7 @@ class MessageAttachmentView extends StatelessWidget {
     }
 
     return OutlinedButton.icon(
-      icon: const Icon(Icons.attach_file, size: 18),
+      icon: const Icon(Symbols.attach_file, size: 18),
       label: const Text('Abrir anexo'),
       style: OutlinedButton.styleFrom(
         enabledMouseCursor: SystemMouseCursors.click,
@@ -99,16 +91,9 @@ class _VideoPlayBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.black.withValues(alpha: 0.55),
         shape: BoxShape.circle,
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.8),
-          width: 1.5,
-        ),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.8), width: 1.5),
       ),
-      child: const Icon(
-        Icons.play_arrow_rounded,
-        size: 32,
-        color: Colors.white,
-      ),
+      child: const Icon(Symbols.play_arrow, size: 32, color: Colors.white, fill: 1),
     );
   }
 }

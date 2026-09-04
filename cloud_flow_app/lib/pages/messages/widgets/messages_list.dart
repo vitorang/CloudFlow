@@ -3,6 +3,7 @@ import 'package:cloud_flow_app/cubits/messages_list_cubit.dart';
 import 'package:cloud_flow_app/pages/messages/widgets/message_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 class MessagesList extends StatefulWidget {
   const MessagesList({super.key});
@@ -52,7 +53,7 @@ class _MessagesListState extends State<MessagesList> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.error_outline, size: 48, color: theme.colorScheme.error),
+                Icon(Symbols.error, size: 48, color: theme.colorScheme.error),
                 const SizedBox(height: 12),
                 Text(state.errorMessage!, style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.error)),
                 const SizedBox(height: 12),
@@ -75,7 +76,7 @@ class _MessagesListState extends State<MessagesList> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.chat_bubble_outline, size: 64, color: theme.colorScheme.outline),
+                Icon(Symbols.chat_bubble, size: 64, color: theme.colorScheme.outline),
                 const SizedBox(height: 16),
                 Text(
                   'Nenhuma mensagem ainda',
