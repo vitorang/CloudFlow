@@ -1,5 +1,4 @@
 using Amazon.DynamoDBv2.DataModel;
-using CloudFlow.Core.Enums;
 
 namespace CloudFlow.Infrastructure.Aws.Models;
 
@@ -16,11 +15,16 @@ public class MessageItem
     public string Text { get; set; } = string.Empty;
 
     [DynamoDBProperty]
-    public int Type { get; set; }
+    public string? AttachmentKey { get; set; }
+
+    [DynamoDBProperty]
+    public string? ThumbnailKey { get; set; }
 
     [DynamoDBProperty]
     public string CreatedAt { get; set; } = string.Empty;
 
+
     [DynamoDBProperty]
     public long? ExpiresAt { get; set; }
 }
+

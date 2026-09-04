@@ -5,13 +5,22 @@ using CloudFlow.Core.Interfaces.Services;
 
 namespace CloudFlow.Core.Services;
 
-public class MessageService(IMessageRepository messageRepository) : IMessageService
+public class MessageService(
+    IMessageRepository messageRepository,
+    IStorageService storageService) : IMessageService
 {
     private const int RecentMessagesLimit = 20;
 
     public async Task Create(CreateMessageDto dto, CancellationToken cancellationToken)
     {
         var message = dto.ToEntity();
+
+        if (!string.IsNullOrWhiteSpace(message.AttachmentKey))
+            message.AttachmentKey = await storageService.MoveToMessages(message.AttachmentKey, cancellationToken);
+
+        if (!string.IsNullOrWhiteSpace(message.ThumbnailKey))
+            message.ThumbnailKey = await storageService.MoveToMessages(message.ThumbnailKey, cancellationToken);
+
         await messageRepository.Create(message, cancellationToken);
     }
 
@@ -24,9 +33,10 @@ public class MessageService(IMessageRepository messageRepository) : IMessageServ
         var hasPreviousMessages = activeMessages.Count > RecentMessagesLimit;
         var slicedMessages = activeMessages.Take(RecentMessagesLimit).ToList();
 
-        var responseDtos = slicedMessages.Select(m => m.ToResponseDto()).ToList();
+        var responseDtos = slicedMessages.Select(m => m.ToResponseDto(storageService)).ToList();
         return new RecentMessagesResponseDto(responseDtos, hasPreviousMessages);
     }
+
 
     public async Task DeleteMany(DeleteMessagesDto dto, CancellationToken cancellationToken)
     {

@@ -1,11 +1,10 @@
-using CloudFlow.Core.Enums;
-
 namespace CloudFlow.Core.Dtos;
 
 public record CreateMessageDto(
     string Author,
     string Text,
-    MessageType Type,
+    string? AttachmentKey = null,
+    string? ThumbnailKey = null,
     int? ExpiresInHours = null
 );
 
@@ -13,7 +12,8 @@ public record MessageResponseDto(
     string Id,
     string Author,
     string Text,
-    MessageType Type,
+    string? AttachmentUrl,
+    string? ThumbnailUrl,
     DateTime CreatedAt,
     long? ExpiresAt = null
 );

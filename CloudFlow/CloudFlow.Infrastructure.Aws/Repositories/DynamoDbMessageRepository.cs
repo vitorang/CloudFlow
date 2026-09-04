@@ -1,7 +1,6 @@
 using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2.DocumentModel;
 using CloudFlow.Core.Entities;
-using CloudFlow.Core.Enums;
 using CloudFlow.Core.Interfaces.Repositories;
 using CloudFlow.Infrastructure.Aws.Models;
 
@@ -16,7 +15,8 @@ public class DynamoDbMessageRepository(IDynamoDBContext context) : IMessageRepos
             Id = message.Id,
             Author = message.Author,
             Text = message.Text,
-            Type = (int)message.Type,
+            AttachmentKey = message.AttachmentKey,
+            ThumbnailKey = message.ThumbnailKey,
             CreatedAt = message.CreatedAt.ToString("O"),
             ExpiresAt = message.ExpiresAt
         };
@@ -42,11 +42,14 @@ public class DynamoDbMessageRepository(IDynamoDBContext context) : IMessageRepos
                 Id = item.Id,
                 Author = item.Author,
                 Text = item.Text,
-                Type = (MessageType)item.Type,
+                AttachmentKey = item.AttachmentKey,
+                ThumbnailKey = item.ThumbnailKey,
                 CreatedAt = DateTime.Parse(item.CreatedAt),
                 ExpiresAt = item.ExpiresAt
             })];
     }
+
+
 
     public async Task DeleteMany(IReadOnlyList<string> ids, CancellationToken cancellationToken)
     {

@@ -58,10 +58,9 @@ sequenceDiagram
 - Flutter SDK
 - Conta na AWS (todos os recursos utilizados são elegíveis ao Free Tier)
 
-### 2. Configurar Variáveis de Ambiente
-Renomeie o arquivo `.env.example` para `.env` dentro da pasta `CloudFlow` e preencha com suas credenciais e endpoints:
 
-Edite o arquivo `CloudFlow/.env` informando sua região, credenciais do IAM e URLs do WebSocket da AWS:
+### 2. Configurar Variáveis de Ambiente
+Copie o arquivo `.env.example` para `.env` dentro da pasta `CloudFlow` e preencha com sua região, credenciais do IAM e URLs do WebSocket:
 - `AWS_WEBSOCKET_SERVICE_URL`: URL de gerenciamento (`https://{api-id}.execute-api.{region}.amazonaws.com/{stage}`)
 - `AWS_WEBSOCKET_PUBLIC_URL`: URL de conexão (`wss://{api-id}.execute-api.{region}.amazonaws.com/{stage}`)
 
@@ -77,7 +76,6 @@ cd cloud_flow_app
 flutter run
 ```
 
-
 ## Configurações da AWS
 
 ### 1. IAM
@@ -87,6 +85,7 @@ Crie um usuário com credenciais (`AccessKey` e `SecretKey`) e as permissões:
 - `AmazonDynamoDBFullAccess`
 - `AmazonAPIGatewayInvokeFullAccess`
 - `AWSLambda_FullAccess`
+- `AmazonS3FullAccess`
 
 #### Roles de Execução (Lambdas)
 Crie Roles do tipo AWS Service ➔ Lambda com as permissões:
@@ -101,6 +100,7 @@ Crie Roles do tipo AWS Service ➔ Lambda com as permissões:
    - `AmazonDynamoDBFullAccess`
    - `AmazonAPIGatewayInvokeFullAccess`
    - `AmazonSNSFullAccess`
+   - `AmazonS3FullAccess`
 
 3. `CloudFlow_Audit`
    - `AWSLambdaBasicExecutionRole`
@@ -114,15 +114,15 @@ Crie as tabelas no modo On-Demand:
 
 - `CloudFlow_Messages`
   - Partition key: `Id` (String)
-  - DynamoDB Streams: Imagens novas e antigas / New and old images
-  - Tempo de Vida/Time to Live (TTL): Ativado no atributo `ExpiresAt`
+  - DynamoDB Streams: Imagens novas e antigas
+  - Tempo de Vida (TTL): Ativado no atributo `ExpiresAt`
 
 - `CloudFlow_WebSocketConnections`
   - Partition key: `ConnectionId` (String)
 
 
 ### 3. SNS (Simple Notification Service)
-Crie os tópicos para publicação e distribuição de eventos de auditoria (ambos do tipo **Padrão / Standard**):
+Crie os tópicos para publicação e distribuição de eventos de auditoria (tipo Padrão):
 
 - **`CloudFlow_Messages`**: eventos de ciclo de vida de mensagens
 - **`CloudFlow_Users`**: eventos de presença/sessão
@@ -135,14 +135,14 @@ Crie uma API WebSocket:
   - `$connect` ➔ Integrar com Lambda `WebSocketConnectHandler`
   - `$disconnect` ➔ Integrar com Lambda `WebSocketDisconnectHandler`
   - `$default` ➔ Mock
-  - Nota: ative Integração de proxy do Lambda / Lambda proxy para as rotas Lambda
-- Stage: `dev` (sempre clicar em Implantar API / Deploy API após alterações)
+  - Nota: ative Integração de proxy do Lambda para as rotas Lambda
+- Stage: `dev` (sempre clicar em Implantar API após alterações)
 
 
 ### 5. Criação e Configuração das Lambdas no Console da AWS
 
-Crie as seguintes funções no Console da AWS (opção **Criar do zero** / *Author from scratch*):
-- **Runtime / Tempo de execução**: `.NET 10`
+Crie as seguintes funções no Console da AWS:
+- **Runtime**: `.NET 10`
 - **Memória**: `256 MB`
 
 #### Funções a criar:
@@ -164,10 +164,11 @@ Crie as seguintes funções no Console da AWS (opção **Criar do zero** / *Auth
 3. **`CloudFlow_DynamoDbMessageStream`**
    - Role de Execução: `CloudFlow_DynamoDb`
    - Handler: `CloudFlow.Workers.Aws::CloudFlow.Workers.Aws.DynamoDbStreams.MessageStreamHandler::Handle`
-   - Gatilho: **DynamoDB** apontando para a tabela `CloudFlow_Messages` (posição inicial: *Latest*)
+   - Gatilho: DynamoDB apontando para a tabela `CloudFlow_Messages` (posição inicial: Latest)
    - Variáveis de Ambiente:
-     - `AWS_WEBSOCKET_SERVICE_URL`: URL de gerenciamento HTTP do API Gateway
+     - `AWS_WEBSOCKET_SERVICE_URL`: URL de gerenciamento do WebSocket
      - `AWS_SNS_MESSAGES_TOPIC_ARN`: ARN do tópico `CloudFlow_Messages`
+     - `AWS_S3_BUCKET_NAME`: Nome do bucket S3 criado para anexos
 
 4. **`CloudFlow_SnsAuditEvent`**
    - Role de Execução: `CloudFlow_Audit`
@@ -194,10 +195,34 @@ Execute o script de publicação na pasta `CloudFlow` para compilar e atualizar 
 ```
 
 
-### 7. Variáveis de Ambiente Locais
-Copie `CloudFlow/.env.example` para `CloudFlow/.env` e preencha as variáveis com a região, credenciais do IAM e endpoints correspondentes:
+### 7. S3 (Simple Storage Service)
+Crie um bucket de armazenamento para anexos:
+- **Nome do bucket:** Ex: `cloudflow-{id-ou-usuario}`
+- **Bloqueio de acesso público:** Ativado
+- **Regra de Ciclo de Vida:**
+  - Aba Gerenciamento ➔ Criar regra de ciclo de vida
+  - Nome: `cleanup-temp-uploads`
+  - Filtro por prefixo: `temp/`
+  - Ação: Expirar versões atuais de objetos após **1 dia**
+- **CORS:**
+  - Aba Permissões ➔ Compartilhamento de recursos de origem cruzada (CORS) ➔ Editar:
+  ```json
+  [
+      {
+          "AllowedHeaders": ["*"],
+          "AllowedMethods": ["GET", "PUT", "HEAD"],
+          "AllowedOrigins": ["*"],
+          "ExposeHeaders": []
+      }
+  ]
+  ```
+
+
+### 8. Variáveis de Ambiente Locais
+Copie `CloudFlow/.env.example` para `CloudFlow/.env` e preencha as variáveis com a região, credenciais do IAM e URLs correspondentes:
 - `AWS_WEBSOCKET_SERVICE_URL`: URL de gerenciamento (`https://{api-id}.execute-api.{region}.amazonaws.com/{stage}`)
 - `AWS_WEBSOCKET_PUBLIC_URL`: URL de conexão (`wss://{api-id}.execute-api.{region}.amazonaws.com/{stage}`)
+- `AWS_S3_BUCKET_NAME`: Nome do bucket S3 criado para anexos
 
 
 ## Próximos Passos

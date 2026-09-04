@@ -6,8 +6,8 @@ using Amazon.Lambda.DynamoDBEvents;
 using Amazon.SimpleNotificationService;
 using CloudFlow.Core.Constants;
 using CloudFlow.Core.Dtos;
-using CloudFlow.Core.Enums;
 using CloudFlow.Core.Interfaces.Services;
+using CloudFlow.Infrastructure.Aws.Configuration;
 using CloudFlow.Infrastructure.Aws.Constants;
 using CloudFlow.Infrastructure.Aws.Repositories;
 using CloudFlow.Infrastructure.Aws.Services;
@@ -18,10 +18,12 @@ public class MessageStreamHandler : IDisposable
 {
     private readonly IWebSocketNotificationService webSocketNotificationService;
     private readonly IAuditNotificationService auditNotificationService;
+    private readonly IStorageService storageService;
     private readonly AmazonDynamoDBClient? dynamoClient;
     private readonly DynamoDBContext? dynamoContext;
     private readonly AmazonApiGatewayManagementApiClient? apiGatewayClient;
     private readonly AmazonSimpleNotificationServiceClient? snsClient;
+    private readonly Amazon.S3.AmazonS3Client? s3Client;
 
     public MessageStreamHandler()
     {
@@ -30,6 +32,13 @@ public class MessageStreamHandler : IDisposable
 
         var snsTopicArn = Environment.GetEnvironmentVariable(AwsEnvironmentVariables.SnsMessagesTopicArn)
             ?? throw new InvalidOperationException($"Variável de ambiente {AwsEnvironmentVariables.SnsMessagesTopicArn} não foi definida.");
+
+        var s3BucketName = Environment.GetEnvironmentVariable(AwsEnvironmentVariables.S3BucketName)
+            ?? throw new InvalidOperationException($"Variável de ambiente {AwsEnvironmentVariables.S3BucketName} não foi definida.");
+
+        var region = Environment.GetEnvironmentVariable(AwsEnvironmentVariables.Region)
+            ?? throw new InvalidOperationException($"Variável de ambiente {AwsEnvironmentVariables.Region} não foi definida.");
+
 
         dynamoClient = new AmazonDynamoDBClient();
         dynamoContext = new DynamoDBContextBuilder()
@@ -46,18 +55,38 @@ public class MessageStreamHandler : IDisposable
 
         snsClient = new AmazonSimpleNotificationServiceClient();
         auditNotificationService = new SnsAuditNotificationService(snsClient, snsTopicArn);
+
+        var s3Config = new Amazon.S3.AmazonS3Config
+        {
+            RegionEndpoint = Amazon.RegionEndpoint.GetBySystemName(region)
+        };
+        s3Client = new Amazon.S3.AmazonS3Client(s3Config);
+
+        var awsOptions = new AwsOptions(
+            Region: region,
+            AccessKey: string.Empty,
+            SecretKey: string.Empty,
+            DynamoDB: new DynamoDbOptions(string.Empty),
+            WebSocket: new WebSocketOptions(wsServiceUrl, string.Empty),
+            S3: new S3Options(s3BucketName)
+        );
+        storageService = new S3StorageService(s3Client, awsOptions);
     }
+
 
     public MessageStreamHandler(
         IWebSocketNotificationService webSocketNotificationService,
-        IAuditNotificationService auditNotificationService)
+        IAuditNotificationService auditNotificationService,
+        IStorageService storageService)
     {
         this.webSocketNotificationService = webSocketNotificationService;
         this.auditNotificationService = auditNotificationService;
+        this.storageService = storageService;
     }
 
     public void Dispose()
     {
+        s3Client?.Dispose();
         snsClient?.Dispose();
         apiGatewayClient?.Dispose();
         dynamoContext?.Dispose();
@@ -109,6 +138,16 @@ public class MessageStreamHandler : IDisposable
 
         var messageId = messageIdAttribute.S;
 
+        var keysToDelete = new List<string>();
+        if (oldImage.TryGetValue("AttachmentKey", out var attachmentKeyAttribute) && !string.IsNullOrWhiteSpace(attachmentKeyAttribute.S))
+            keysToDelete.Add(attachmentKeyAttribute.S);
+
+        if (oldImage.TryGetValue("ThumbnailKey", out var thumbnailKeyAttribute) && !string.IsNullOrWhiteSpace(thumbnailKeyAttribute.S))
+            keysToDelete.Add(thumbnailKeyAttribute.S);
+
+        if (keysToDelete.Count > 0)
+            await storageService.DeleteMany(keysToDelete, cancellationToken);
+
         var webSocketMessage = new WebSocketMessageDto<string>(WebSocketEvents.MessageDeleted, messageId);
         await webSocketNotificationService.Broadcast(webSocketMessage, cancellationToken);
 
@@ -121,16 +160,17 @@ public class MessageStreamHandler : IDisposable
         await auditNotificationService.Publish(auditDto, cancellationToken);
     }
 
-    private static MessageResponseDto? TryGetMessageDto(
+    private MessageResponseDto? TryGetMessageDto(
         Dictionary<string, Amazon.Lambda.DynamoDBEvents.DynamoDBEvent.AttributeValue> image)
     {
         if (!image.TryGetValue("Id", out var messageIdAttribute) ||
             !image.TryGetValue("Text", out var textAttribute) ||
-            !image.TryGetValue("Type", out var typeAttribute) ||
             !image.TryGetValue("CreatedAt", out var createdAtAttribute))
             return null;
 
         var author = image.TryGetValue("Author", out var authorAttribute) ? authorAttribute.S : string.Empty;
+        var attachmentKey = image.TryGetValue("AttachmentKey", out var attachmentKeyAttribute) ? attachmentKeyAttribute.S : null;
+        var thumbnailKey = image.TryGetValue("ThumbnailKey", out var thumbnailKeyAttribute) ? thumbnailKeyAttribute.S : null;
         long? expiresAt = image.TryGetValue("ExpiresAt", out var expiresAtAttribute) && long.TryParse(expiresAtAttribute.N, out var parsedExpiresAt)
             ? parsedExpiresAt
             : null;
@@ -139,7 +179,8 @@ public class MessageStreamHandler : IDisposable
             Id: messageIdAttribute.S,
             Author: author,
             Text: textAttribute.S,
-            Type: (MessageType)int.Parse(typeAttribute.N),
+            AttachmentUrl: storageService.GetDownloadUrl(attachmentKey),
+            ThumbnailUrl: storageService.GetDownloadUrl(thumbnailKey),
             CreatedAt: DateTime.Parse(createdAtAttribute.S),
             ExpiresAt: expiresAt
         );

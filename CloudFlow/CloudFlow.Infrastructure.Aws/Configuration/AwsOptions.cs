@@ -9,10 +9,15 @@ public record WebSocketOptions(
     string PublicUrl
 );
 
+public record S3Options(
+    string BucketName
+);
+
 public record AwsOptions(
     string Region,
     string AccessKey,
     string SecretKey,
     DynamoDbOptions DynamoDB,
-    WebSocketOptions WebSocket
+    WebSocketOptions WebSocket,
+    S3Options S3
 );

@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:cloud_flow_app/enums/message_type.dart';
 import 'package:cloud_flow_app/extensions/http_response_extensions.dart';
 import 'package:cloud_flow_app/models/recent_messages_response.dart';
 import 'package:http/http.dart' as http;
@@ -13,7 +12,8 @@ class MessagesService {
     required String apiUrl,
     required String author,
     required String text,
-    MessageType type = MessageType.text,
+    String? attachmentKey,
+    String? thumbnailKey,
     int? expiresInHours,
   }) async {
     final uri = Uri.parse('$apiUrl/api/messages');
@@ -24,7 +24,8 @@ class MessagesService {
       body: jsonEncode({
         'author': author,
         'text': text,
-        'type': type.value,
+        'attachmentKey': attachmentKey,
+        'thumbnailKey': thumbnailKey,
         'expiresInHours': expiresInHours,
       }),
     );
@@ -34,10 +35,7 @@ class MessagesService {
     }
   }
 
-  Future<RecentMessagesResponse> getRecentMessages({
-    required String apiUrl,
-    DateTime? before,
-  }) async {
+  Future<RecentMessagesResponse> getRecentMessages({required String apiUrl, DateTime? before}) async {
     final baseUri = Uri.parse('$apiUrl/api/messages');
     final uri = before != null
         ? baseUri.replace(queryParameters: {'before': before.toUtc().toIso8601String()})
@@ -56,10 +54,7 @@ class MessagesService {
     return RecentMessagesResponse.fromJson(decoded);
   }
 
-  Future<void> deleteMessages({
-    required String apiUrl,
-    required List<String> ids,
-  }) async {
+  Future<void> deleteMessages({required String apiUrl, required List<String> ids}) async {
     final uri = Uri.parse('$apiUrl/api/messages');
     final response = await _client.delete(
       uri,

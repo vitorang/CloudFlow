@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Amazon;
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DataModel;
 using Amazon.Runtime;
@@ -41,6 +42,13 @@ public static class AwsServiceExtensions
             new Amazon.ApiGatewayManagementApi.AmazonApiGatewayManagementApiClient(credentials, wsConfig));
         services.AddScoped<CloudFlow.Core.Interfaces.Services.IWebSocketNotificationService, Services.ApiGatewayWebSocketNotificationService>();
 
+        var s3Config = new Amazon.S3.AmazonS3Config
+        {
+            RegionEndpoint = RegionEndpoint.GetBySystemName(awsOptions.Region)
+        };
+        services.AddSingleton<Amazon.S3.IAmazonS3>(new Amazon.S3.AmazonS3Client(credentials, s3Config));
+        services.AddScoped<CloudFlow.Core.Interfaces.Services.IStorageService, Services.S3StorageService>();
+
         return services;
     }
 
@@ -64,13 +72,16 @@ public static class AwsServiceExtensions
         var wsPublicUrl = configuration["AWS:WebSocket:PublicUrl"]
             ?? throw new InvalidOperationException("Configuração AWS:WebSocket:PublicUrl não foi definida.");
 
+        var s3BucketName = configuration["AWS:S3:BucketName"]
+            ?? throw new InvalidOperationException("Configuração AWS:S3:BucketName não foi definida.");
+
         return new AwsOptions(
             Region: region,
             AccessKey: accessKey,
             SecretKey: secretKey,
             DynamoDB: new DynamoDbOptions(dynamoServiceUrl),
-            WebSocket: new WebSocketOptions(wsServiceUrl, wsPublicUrl)
+            WebSocket: new WebSocketOptions(wsServiceUrl, wsPublicUrl),
+            S3: new S3Options(s3BucketName)
         );
     }
 }
-
