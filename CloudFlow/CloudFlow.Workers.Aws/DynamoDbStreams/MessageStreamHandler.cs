@@ -164,10 +164,10 @@ public class MessageStreamHandler : IDisposable
         Dictionary<string, Amazon.Lambda.DynamoDBEvents.DynamoDBEvent.AttributeValue> image)
     {
         if (!image.TryGetValue("Id", out var messageIdAttribute) ||
-            !image.TryGetValue("Text", out var textAttribute) ||
             !image.TryGetValue("CreatedAt", out var createdAtAttribute))
             return null;
 
+        var text = image.TryGetValue("Text", out var textAttribute) ? textAttribute.S ?? string.Empty : string.Empty;
         var author = image.TryGetValue("Author", out var authorAttribute) ? authorAttribute.S : string.Empty;
         var attachmentKey = image.TryGetValue("AttachmentKey", out var attachmentKeyAttribute) ? attachmentKeyAttribute.S : null;
         var thumbnailKey = image.TryGetValue("ThumbnailKey", out var thumbnailKeyAttribute) ? thumbnailKeyAttribute.S : null;
@@ -178,7 +178,7 @@ public class MessageStreamHandler : IDisposable
         return new MessageResponseDto(
             Id: messageIdAttribute.S,
             Author: author,
-            Text: textAttribute.S,
+            Text: text,
             AttachmentUrl: storageService.GetDownloadUrl(attachmentKey),
             ThumbnailUrl: storageService.GetDownloadUrl(thumbnailKey),
             CreatedAt: DateTime.Parse(createdAtAttribute.S),

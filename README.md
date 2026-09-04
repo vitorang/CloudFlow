@@ -14,6 +14,7 @@ Construído com .NET no backend e Flutter no frontend, o projeto adota uma Arqui
   - Amazon DynamoDB & DynamoDB Streams
   - Amazon SNS
   - Amazon API Gateway (WebSocket)
+  - Amazon S3
   - AWS IAM
 
 
@@ -23,10 +24,14 @@ Construído com .NET no backend e Flutter no frontend, o projeto adota uma Arqui
 ```mermaid
 sequenceDiagram
     autonumber
-    Flutter App->>API (.NET): Envia mensagem<br/>(POST /api/messages)
-    API (.NET)->>DynamoDB: Persiste mensagem<br/>(com TTL opcional)
+    Flutter App->>API: Solicita URLs de upload
+    API->>S3: Cria Presigned POST
+    S3-->>Flutter App: Upload direto em temp/
+    Flutter App->>API: Envia mensagem com<br/>chaves temporárias
+    API->>S3: Move arquivos de<br/>temp/ para messages/
+    API->>DynamoDB: Persiste mensagem<br/>com TTL opcional
     DynamoDB-->>Lambda Streams: Dispara evento INSERT
-    Lambda Streams->>API Gateway WS: Broadcast<br/>(MessageCreated)
+    Lambda Streams->>API Gateway WS: Envia nova mensagem
     API Gateway WS-->>Flutter App: Notifica clientes conectados
 ```
 
@@ -34,20 +39,21 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     autonumber
-    Lambda Streams->>SNS (Tópico): Publica evento
-    SNS (Tópico)-->>Lambda Auditoria: Dispara função inscrita
-    Lambda Auditoria->>API Gateway WS: Broadcast<br/>(AuditEvent)
-    API Gateway WS-->>Flutter App: Exibe evento<br/>no painel lateral
+    Lambda Streams->>SNS Tópico: Publica evento
+    SNS Tópico-->>Lambda Auditoria: Dispara função inscrita
+    Lambda Auditoria->>API Gateway WS: Envia evento<br/>de auditoria
+    API Gateway WS-->>Flutter App: Exibe evento no painel lateral
 ```
 
-### 3. Limpeza Automática (DynamoDB TTL)
+### 3. Limpeza Automática (DynamoDB TTL e S3)
 ```mermaid
 sequenceDiagram
     autonumber
     DynamoDB-->>DynamoDB: Identifica item expirado pelo TTL
     DynamoDB-->>Lambda Streams: Dispara evento REMOVE
-    Lambda Streams->>API Gateway WS: Broadcast<br/>(MessageDeleted)
-    API Gateway WS-->>Flutter App: Notifica clientes<br/>conectados
+    Lambda Streams->>S3: Exclui anexos e miniaturas
+    Lambda Streams->>API Gateway WS: Notifica exclusão
+    API Gateway WS-->>Flutter App: Notifica clientes conectados
 ```
 
 
@@ -210,7 +216,7 @@ Crie um bucket de armazenamento para anexos:
   [
       {
           "AllowedHeaders": ["*"],
-          "AllowedMethods": ["GET", "PUT", "HEAD"],
+          "AllowedMethods": ["GET", "POST", "HEAD"],
           "AllowedOrigins": ["*"],
           "ExposeHeaders": []
       }
@@ -226,10 +232,6 @@ Copie `CloudFlow/.env.example` para `CloudFlow/.env` e preencha as variáveis co
 
 
 ## Próximos Passos
-
-### AWS
-- **Armazenamento de Arquivos:** Envio e compartilhamento de arquivos e imagens (AWS S3 com Presigned URLs)
-- **Processamento Assíncrono:** Exclusão assíncrona de arquivos anexados via fila (AWS SQS)
 
 ### Azure (Planejamento de Equivalência Arquitetural)
 - **Comunicação em Tempo Real:** Substituição do API Gateway WebSocket pelo **Azure Web PubSub** gerenciando conexões de clientes

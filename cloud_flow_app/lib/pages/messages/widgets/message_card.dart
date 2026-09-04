@@ -1,9 +1,9 @@
 import 'dart:math';
 import 'package:cloud_flow_app/models/message_item.dart';
 import 'package:cloud_flow_app/pages/messages/widgets/link_preview_card.dart';
-import 'package:flutter/gestures.dart';
+import 'package:cloud_flow_app/pages/messages/widgets/message_attachment_view.dart';
+import 'package:cloud_flow_app/pages/messages/widgets/message_text_with_links.dart';
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class _AuthorTheme {
   final IconData icon;
@@ -60,11 +60,6 @@ class MessageCard extends StatelessWidget {
     this.onLongPress,
   });
 
-  static final RegExp _urlRegex = RegExp(
-    r'(https?:\/\/[^\s]+)',
-    caseSensitive: false,
-  );
-
   String _formatTimestamp(DateTime dateTime) {
     final localTime = dateTime.toLocal();
     final now = DateTime.now();
@@ -84,79 +79,22 @@ class MessageCard extends StatelessWidget {
     return '$day/$month/$year $hour:$minute';
   }
 
-  void _openUrl(String url) async {
-    final uri = Uri.tryParse(url);
-    if (uri != null) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
-  }
-
-  Widget _buildTextWithLinks(BuildContext context, ThemeData theme, List<String> extractedUrls) {
-    if (extractedUrls.isEmpty) {
-      return SelectableText(
-        message.text,
-        style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurface, height: 1.45),
-      );
-    }
-
-    final spans = <InlineSpan>[];
-    var lastIndex = 0;
-
-    for (final match in _urlRegex.allMatches(message.text)) {
-      if (match.start > lastIndex) {
-        spans.add(
-          TextSpan(
-            text: message.text.substring(lastIndex, match.start),
-            style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurface, height: 1.45),
-          ),
-        );
-      }
-
-      final url = match.group(0)!;
-      spans.add(
-        TextSpan(
-          text: url,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.primary,
-            decoration: TextDecoration.underline,
-            decorationColor: theme.colorScheme.primary,
-            height: 1.45,
-          ),
-          recognizer: TapGestureRecognizer()..onTap = () => _openUrl(url),
-        ),
-      );
-
-      lastIndex = match.end;
-    }
-
-    if (lastIndex < message.text.length) {
-      spans.add(
-        TextSpan(
-          text: message.text.substring(lastIndex),
-          style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurface, height: 1.45),
-        ),
-      );
-    }
-
-    return SelectableText.rich(
-      TextSpan(children: spans),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final authorTheme = _getAuthorTheme(message.author);
 
-    final extractedUrls = _urlRegex
-        .allMatches(message.text)
-        .map((m) => m.group(0)!)
-        .toList();
+    final hasText = message.text.trim().isNotEmpty;
+    final extractedUrls = MessageTextWithLinks.extractUrls(message.text);
 
     return InkWell(
       onTap: isSelectionMode ? onToggleSelect : null,
       onLongPress: onLongPress,
       borderRadius: BorderRadius.circular(8),
+      mouseCursor: isSelectionMode ? SystemMouseCursors.click : MouseCursor.defer,
+      hoverColor: isSelectionMode ? null : Colors.transparent,
+      splashColor: isSelectionMode ? null : Colors.transparent,
+      highlightColor: isSelectionMode ? null : Colors.transparent,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
         decoration: BoxDecoration(
@@ -216,8 +154,20 @@ class MessageCard extends StatelessWidget {
                       ],
                     ],
                   ),
-                  const SizedBox(height: 4),
-                  _buildTextWithLinks(context, theme, extractedUrls),
+                  if (hasText) ...[
+                    const SizedBox(height: 4),
+                    MessageTextWithLinks(
+                      text: message.text,
+                      extractedUrls: extractedUrls,
+                    ),
+                  ],
+                  if (message.attachmentUrl != null) ...[
+                    SizedBox(height: hasText ? 8 : 4),
+                    MessageAttachmentView(
+                      attachmentUrl: message.attachmentUrl!,
+                      thumbnailUrl: message.thumbnailUrl,
+                    ),
+                  ],
                   if (extractedUrls.length == 1) ...[
                     const SizedBox(height: 10),
                     LinkPreviewCard(url: extractedUrls.first),

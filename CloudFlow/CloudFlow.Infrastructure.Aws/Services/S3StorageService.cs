@@ -9,7 +9,7 @@ namespace CloudFlow.Infrastructure.Aws.Services;
 
 public class S3StorageService(IAmazonS3 s3Client, AwsOptions awsOptions) : IStorageService
 {
-    public Task<UploadUrlsResponseDto> GenerateUploadUrls(GenerateUploadUrlsDto dto, CancellationToken cancellationToken)
+    public async Task<UploadUrlsResponseDto> GenerateUploadUrls(GenerateUploadUrlsDto dto, CancellationToken cancellationToken)
     {
         var rawExtension = dto.FileExtension.Trim();
         var normalizedExtension = (rawExtension.StartsWith('.') ? rawExtension[1..] : rawExtension).ToLowerInvariant();
@@ -19,33 +19,36 @@ public class S3StorageService(IAmazonS3 s3Client, AwsOptions awsOptions) : IStor
 
         var fileId = Ulid.NewUlid().ToString();
         var fileKey = BuildFileKey(StorageLimits.TempFolderPrefix, fileId, normalizedExtension);
-        var fileUploadUrl = CreatePresignedPutUrl(fileKey);
-
-        var fileTarget = new UploadTargetDto(
+        var attachmentPost = await CreatePresignedPost(fileKey, StorageLimits.MaxAttachmentSizeBytes);
+        var attachmentUpload = new AttachmentUploadDto(
             Key: fileKey,
-            UploadUrl: fileUploadUrl,
+            UploadUrl: attachmentPost.Url,
+            FormFields: attachmentPost.Fields,
             MaxSizeBytes: StorageLimits.MaxAttachmentSizeBytes
         );
 
-        UploadTargetDto? thumbnailTarget = null;
+        ThumbnailUploadDto? thumbnailUpload = null;
         if (dto.HasThumbnail)
         {
             var thumbnailKey = BuildFileKey(StorageLimits.TempFolderPrefix, fileId, StorageLimits.ThumbnailExtension, isThumbnail: true);
-            var thumbnailUploadUrl = CreatePresignedPutUrl(thumbnailKey);
+            var thumbnailPost = await CreatePresignedPost(thumbnailKey, StorageLimits.MaxThumbnailSizeBytes);
 
-            thumbnailTarget = new UploadTargetDto(
+            thumbnailUpload = new ThumbnailUploadDto(
                 Key: thumbnailKey,
-                UploadUrl: thumbnailUploadUrl,
-                MaxSizeBytes: StorageLimits.MaxThumbnailSizeBytes
+                UploadUrl: thumbnailPost.Url,
+                FormFields: thumbnailPost.Fields,
+                MaxSizeBytes: StorageLimits.MaxThumbnailSizeBytes,
+                MaxWidthPx: StorageLimits.ThumbnailMaxWidthPx,
+                MaxHeightPx: StorageLimits.ThumbnailMaxHeightPx
             );
         }
 
         var responseDto = new UploadUrlsResponseDto(
-            File: fileTarget,
-            Thumbnail: thumbnailTarget
+            Attachment: attachmentUpload,
+            Thumbnail: thumbnailUpload
         );
 
-        return Task.FromResult(responseDto);
+        return responseDto;
     }
 
     private static string BuildFileKey(string folderPrefix, string fileId, string extension, bool isThumbnail = false)
@@ -54,17 +57,18 @@ public class S3StorageService(IAmazonS3 s3Client, AwsOptions awsOptions) : IStor
         return $"{folderPrefix}{fileId}_{suffix}.{extension}";
     }
 
-    private string CreatePresignedPutUrl(string key)
+    private async Task<CreatePresignedPostResponse> CreatePresignedPost(string key, long maxSizeBytes)
     {
-        var presignedUrlRequest = new GetPreSignedUrlRequest
+        var request = new CreatePresignedPostRequest
         {
             BucketName = awsOptions.S3.BucketName,
             Key = key,
-            Verb = HttpVerb.PUT,
             Expires = DateTime.UtcNow.Add(StorageLimits.UploadUrlExpiration)
         };
 
-        return s3Client.GetPreSignedURL(presignedUrlRequest);
+        request.Conditions.Add(S3PostCondition.ContentLengthRange(0, maxSizeBytes));
+
+        return await s3Client.CreatePresignedPostAsync(request);
     }
 
     public async Task<string> MoveToMessages(string tempFileKey, CancellationToken cancellationToken)
@@ -73,15 +77,6 @@ public class S3StorageService(IAmazonS3 s3Client, AwsOptions awsOptions) : IStor
             throw new ArgumentException($"A chave temporária deve iniciar com '{StorageLimits.TempFolderPrefix}'.");
 
         var fileName = tempFileKey[StorageLimits.TempFolderPrefix.Length..];
-
-        var isThumbnail = fileName.Contains($"_{StorageLimits.ThumbnailSuffix}.");
-        var maxAllowedSize = isThumbnail ? StorageLimits.MaxThumbnailSizeBytes : StorageLimits.MaxAttachmentSizeBytes;
-
-        var metadata = await s3Client.GetObjectMetadataAsync(awsOptions.S3.BucketName, tempFileKey, cancellationToken);
-        if (metadata.ContentLength > maxAllowedSize)
-            throw new ArgumentException(
-                $"O tamanho do arquivo ({metadata.ContentLength} bytes) excede o limite máximo permitido de {maxAllowedSize} bytes.");
-
         var destinationKey = $"{StorageLimits.MessagesFolderPrefix}{fileName}";
 
         var copyRequest = new CopyObjectRequest
@@ -123,6 +118,14 @@ public class S3StorageService(IAmazonS3 s3Client, AwsOptions awsOptions) : IStor
         if (string.IsNullOrWhiteSpace(fileKey))
             return null;
 
-        return $"https://{awsOptions.S3.BucketName}.s3.{awsOptions.Region}.amazonaws.com/{fileKey}";
+        var presignedUrlRequest = new GetPreSignedUrlRequest
+        {
+            BucketName = awsOptions.S3.BucketName,
+            Key = fileKey,
+            Verb = HttpVerb.GET,
+            Expires = DateTime.UtcNow.Add(StorageLimits.DownloadUrlExpiration)
+        };
+
+        return s3Client.GetPreSignedURL(presignedUrlRequest);
     }
 }

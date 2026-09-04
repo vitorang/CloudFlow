@@ -15,7 +15,9 @@ dependencies:
   web_socket_channel: ^3.0.3
   any_link_preview: ^3.0.3
   url_launcher: ^6.3.2
-
+  file_picker: ^12.2.0
+  image: ^4.9.2
+  flutter_video_thumbnail_plus: ^1.0.6
 dev_dependencies:
   flutter_test:
     sdk: flutter
