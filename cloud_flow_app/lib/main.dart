@@ -2,8 +2,11 @@ import 'package:cloud_flow_app/cubits/config_cubit.dart';
 import 'package:cloud_flow_app/pages/connect/connect_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:media_kit/media_kit.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  MediaKit.ensureInitialized();
   runApp(const CloudFlowApp());
 }
 

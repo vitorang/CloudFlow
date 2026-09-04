@@ -3,28 +3,25 @@ class MediaFormats {
 
   static const Set<String> imageExtensions = {'jpg', 'jpeg', 'gif', 'png', 'webp'};
 
+  static String _extractExtension(String pathOrUrl) {
+    return pathOrUrl.split('?').first.trim().split('.').last.toLowerCase();
+  }
+
   static bool isVideoUrl(String? url) {
     if (url == null || url.isEmpty) return false;
-    final clean = url.split('?').first.toLowerCase();
-    final dotIndex = clean.lastIndexOf('.');
-    if (dotIndex == -1) return false;
-    final extension = clean.substring(dotIndex + 1);
-    return videoExtensions.contains(extension);
+    return videoExtensions.contains(_extractExtension(url));
+  }
+
+  static bool isImageUrl(String? url) {
+    if (url == null || url.isEmpty) return false;
+    return imageExtensions.contains(_extractExtension(url));
   }
 
   static bool isVideoExtension(String extension) {
-    final clean = _clean(extension);
-    return videoExtensions.contains(clean);
+    return videoExtensions.contains(_extractExtension(extension));
   }
 
   static bool isImageExtension(String extension) {
-    final clean = _clean(extension);
-    return imageExtensions.contains(clean);
-  }
-
-  static String _clean(String extension) {
-    var ext = extension.trim().toLowerCase();
-    if (ext.startsWith('.')) ext = ext.substring(1);
-    return ext;
+    return imageExtensions.contains(_extractExtension(extension));
   }
 }

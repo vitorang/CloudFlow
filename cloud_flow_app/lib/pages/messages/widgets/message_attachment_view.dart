@@ -2,6 +2,7 @@ import 'package:cloud_flow_app/constants/media_formats.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:cloud_flow_app/pages/media_viewer/media_viewer_page.dart';
 
 class MessageAttachmentView extends StatelessWidget {
   final String attachmentUrl;
@@ -9,7 +10,13 @@ class MessageAttachmentView extends StatelessWidget {
 
   const MessageAttachmentView({super.key, required this.attachmentUrl, this.thumbnailUrl});
 
-  Future<void> _openAttachment() async {
+  Future<void> _openAttachment(BuildContext context) async {
+    final isMedia = MediaFormats.isVideoUrl(attachmentUrl) || MediaFormats.isImageUrl(attachmentUrl);
+    if (isMedia) {
+      await Navigator.of(context).push(MaterialPageRoute(builder: (_) => MediaViewerPage(mediaUrl: attachmentUrl)));
+      return;
+    }
+
     final uri = Uri.tryParse(attachmentUrl);
     if (uri != null && await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -29,7 +36,7 @@ class MessageAttachmentView extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           child: InkWell(
             mouseCursor: SystemMouseCursors.click,
-            onTap: _openAttachment,
+            onTap: () => _openAttachment(context),
             borderRadius: BorderRadius.circular(12),
             child: Stack(
               alignment: Alignment.center,
@@ -75,7 +82,7 @@ class MessageAttachmentView extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       ),
-      onPressed: _openAttachment,
+      onPressed: () => _openAttachment(context),
     );
   }
 }
