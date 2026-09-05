@@ -113,16 +113,8 @@ class _MediaViewerPageState extends State<MediaViewerPage> {
       return const CircularProgressIndicator(color: Colors.white);
     }
 
-    return MaterialVideoControlsTheme(
-      normal: MaterialVideoControlsThemeData(
-        bottomButtonBarMargin: const EdgeInsets.only(left: 16, right: 16, bottom: 20),
-        shiftSubtitlesOnControlsVisibilityChange: true,
-      ),
-      fullscreen: MaterialVideoControlsThemeData(
-        bottomButtonBarMargin: const EdgeInsets.only(left: 16, right: 16, bottom: 24),
-        shiftSubtitlesOnControlsVisibilityChange: true,
-      ),
-      child: Video(controller: _videoController!, controls: MaterialVideoControls),
+    return Center(
+      child: Video(controller: _videoController!),
     );
   }
 }
