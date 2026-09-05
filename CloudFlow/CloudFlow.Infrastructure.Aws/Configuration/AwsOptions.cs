@@ -1,7 +1,7 @@
 namespace CloudFlow.Infrastructure.Aws.Configuration;
 
 public record DynamoDbOptions(
-    string ServiceUrl
+    string? ServiceUrl
 );
 
 public record WebSocketOptions(
@@ -15,9 +15,10 @@ public record S3Options(
 
 public record AwsOptions(
     string Region,
-    string AccessKey,
-    string SecretKey,
-    DynamoDbOptions DynamoDB,
-    WebSocketOptions WebSocket,
-    S3Options S3
+    string? AccessKey,
+    string? SecretKey,
+    string? SessionToken = null,
+    DynamoDbOptions DynamoDB = null!,
+    WebSocketOptions WebSocket = null!,
+    S3Options S3 = null!
 );

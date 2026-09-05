@@ -1,8 +1,15 @@
 # CloudFlow
 
-CloudFlow é um projeto de estudo de um sistema de mensagens e compartilhamento rápido em tempo real, inspirado no conceito do Opera Flow.
+CloudFlow é um projeto de estudo de um sistema de mensagens e compartilhamento rápido em tempo real, inspirado no conceito do Opera Flow. Construído com .NET no backend e Flutter no frontend, o projeto adota uma Arquitetura Orientada a Eventos e serverless, com sincronização instantânea entre múltiplos dispositivos e clientes.
 
-Construído com .NET no backend e Flutter no frontend, o projeto adota uma Arquitetura Orientada a Eventos (EDA) e serverless na AWS, utilizando DynamoDB Streams e API Gateway WebSocket para sincronização instantânea entre múltiplos dispositivos e clientes.
+## Funcionalidades Principais
+
+- **Mensagens e Anexos em Tempo Real**: Upload direto via Presigned URL (S3) e sincronização instantânea entre clientes via WebSocket.
+- **Miniaturas Geradas no Cliente**: Miniaturas de imagens e vídeos geradas diretamente no dispositivo antes do envio, poupando tempo de processamento e custos de computação no backend/cloud.
+- **Expiração Automática (DynamoDB TTL)**: Mensagens e seus respectivos anexos/miniaturas no S3 são eliminados automaticamente após o período configurado.
+- **Painel de Auditoria ao Vivo**: Trilha de eventos de ciclo de vida e sessões transmitida em tempo real via Pub/Sub desacoplado (Amazon SNS).
+- **Player & Visualizador Integrado**: Suporte embutido para reprodução de vídeos, zoom em imagens e detecção de links com preview.
+- **Modo Demonstração**: Configuração para ambientes públicos/demonstrações que trava a expiração das mensagens em 1 hora para proteger a privacidade dos usuários e economizar armazenamento.
 
 
 ## Tecnologias Utilizadas
@@ -56,6 +63,14 @@ sequenceDiagram
     API Gateway WS-->>Flutter App: Notifica clientes conectados
 ```
 
+## Considerações de Design & Trade-offs
+
+- **Persistência antes do Broadcast**: Mensagens são gravadas no DynamoDB antes de disparar eventos no WebSocket (Arquitetura Orientada a Eventos com garantia de entrega).
+- **Cold Starts**: Por não usar instâncias reservadas na AWS, o primeiro envio após períodos inativos pode levar alguns segundos adicionais.
+- **Identificação Simplificada**: Não há autenticação com e-mail/senha, apenas um apelido informado ao conectar.
+- **Limites de Demonstração**: Anexos limitados a **10 MB** e miniaturas a **200 KB** no S3.
+- **Expiração do TTL**: Como o TTL da AWS remove itens do banco de forma assíncrona (podendo levar até 48h), a API filtra mensagens vencidas nas listagem inicial de mensagens.
+
 
 ## Como Executar
 
@@ -83,6 +98,7 @@ flutter run
 ```
 
 ## Configurações da AWS
+*Abandonai toda a esperança, ó vós que entrais.*
 
 ### 1. IAM
 
@@ -93,8 +109,8 @@ Crie um usuário com credenciais (`AccessKey` e `SecretKey`) e as permissões:
 - `AWSLambda_FullAccess`
 - `AmazonS3FullAccess`
 
-#### Roles de Execução (Lambdas)
-Crie Roles do tipo AWS Service ➔ Lambda com as permissões:
+#### Funções do IAM (Roles)
+Crie funções no IAM do tipo AWS Service ➔ Lambda com as permissões:
 
 1. `CloudFlow_WebSocket`
    - `AWSLambdaBasicExecutionRole`
@@ -113,6 +129,11 @@ Crie Roles do tipo AWS Service ➔ Lambda com as permissões:
    - `AmazonDynamoDBFullAccess`
    - `AmazonAPIGatewayInvokeFullAccess`
    - `AmazonSNSReadOnlyAccess`
+
+4. `CloudFlow_Api`
+   - `AWSLambdaBasicExecutionRole`
+   - `AmazonDynamoDBFullAccess`
+   - `AmazonS3FullAccess`
 
 
 ### 2. DynamoDB
@@ -134,15 +155,28 @@ Crie os tópicos para publicação e distribuição de eventos de auditoria (tip
 - **`CloudFlow_Users`**: eventos de presença/sessão
 
 
-### 4. API Gateway (WebSocket)
+### 4. API Gateway
+
+#### 1. WebSocket API
 Crie uma API WebSocket:
-- Route selection expression: `$request.body.action`
-- Rotas:
-  - `$connect` ➔ Integrar com Lambda `WebSocketConnectHandler`
-  - `$disconnect` ➔ Integrar com Lambda `WebSocketDisconnectHandler`
+- **Nome**: `CloudFlow_WebSocketApi`
+- **Route selection expression**: `$request.body.action`
+- **Rotas**:
+  - `$connect` ➔ Integrar com Lambda `CloudFlow_WebSocketConnect`
+  - `$disconnect` ➔ Integrar com Lambda `CloudFlow_WebSocketDisconnect`
   - `$default` ➔ Mock
-  - Nota: ative Integração de proxy do Lambda para as rotas Lambda
-- Stage: `dev` (sempre clicar em Implantar API após alterações)
+  - Nota: ative a Integração de proxy do Lambda para as rotas Lambda
+- **Estágio (Stage)**: `dev` (sempre clicar em Implantar API após alterações)
+
+#### 2. HTTP API
+Crie uma API HTTP:
+- **Nome da API**: `CloudFlow_HttpApi`
+- **Rotas**:
+  - **Método**: `ANY`
+  - **Caminho do recurso**: `/{proxy+}`
+  - **Destino da integração**: `CloudFlow_Api`
+- **Estágio (Stage)**: `$default` (com implantação automática ativada)
+- **CORS**: Permitir `*` em Origins, Headers e Methods
 
 
 ### 5. Criação e Configuração das Lambdas no Console da AWS
@@ -154,22 +188,22 @@ Crie as seguintes funções no Console da AWS:
 #### Funções a criar:
 
 1. **`CloudFlow_WebSocketConnect`**
-   - Role de Execução: `CloudFlow_WebSocket`
-   - Handler: `CloudFlow.Workers.Aws::CloudFlow.Workers.Aws.WebSocketApi.WebSocketConnectionHandler::Connect`
+   - Perfil de execução: `CloudFlow_WebSocket`
+   - Manipulador: `CloudFlow.Workers.Aws::CloudFlow.Workers.Aws.WebSocketApi.WebSocketConnectionHandler::Connect`
    - Gatilho: Rota `$connect` do API Gateway WebSocket
    - Variável de Ambiente:
      - `AWS_SNS_USERS_TOPIC_ARN`: ARN do tópico `CloudFlow_Users`
 
 2. **`CloudFlow_WebSocketDisconnect`**
-   - Role de Execução: `CloudFlow_WebSocket`
-   - Handler: `CloudFlow.Workers.Aws::CloudFlow.Workers.Aws.WebSocketApi.WebSocketConnectionHandler::Disconnect`
+   - Perfil de execução: `CloudFlow_WebSocket`
+   - Manipulador: `CloudFlow.Workers.Aws::CloudFlow.Workers.Aws.WebSocketApi.WebSocketConnectionHandler::Disconnect`
    - Gatilho: Rota `$disconnect` do API Gateway WebSocket
    - Variável de Ambiente:
      - `AWS_SNS_USERS_TOPIC_ARN`: ARN do tópico `CloudFlow_Users`
 
 3. **`CloudFlow_DynamoDbMessageStream`**
-   - Role de Execução: `CloudFlow_DynamoDb`
-   - Handler: `CloudFlow.Workers.Aws::CloudFlow.Workers.Aws.DynamoDbStreams.MessageStreamHandler::Handle`
+   - Perfil de execução: `CloudFlow_DynamoDb`
+   - Manipulador: `CloudFlow.Workers.Aws::CloudFlow.Workers.Aws.DynamoDbStreams.MessageStreamHandler::Handle`
    - Gatilho: DynamoDB apontando para a tabela `CloudFlow_Messages` (posição inicial: Latest)
    - Variáveis de Ambiente:
      - `AWS_WEBSOCKET_SERVICE_URL`: URL de gerenciamento do WebSocket
@@ -177,12 +211,23 @@ Crie as seguintes funções no Console da AWS:
      - `AWS_S3_BUCKET_NAME`: Nome do bucket S3 criado para anexos
 
 4. **`CloudFlow_SnsAuditEvent`**
-   - Role de Execução: `CloudFlow_Audit`
-   - Handler: `CloudFlow.Workers.Aws::CloudFlow.Workers.Aws.Sns.AuditEventSnsHandler::Handle`
+   - Perfil de execução: `CloudFlow_Audit`
+   - Manipulador: `CloudFlow.Workers.Aws::CloudFlow.Workers.Aws.Sns.AuditEventSnsHandler::Handle`
    - Gatilhos:
      - **SNS**: tópico `CloudFlow_Messages`
      - **SNS**: tópico `CloudFlow_Users`
    - Variável de Ambiente: `AWS_WEBSOCKET_SERVICE_URL`
+
+5. **`CloudFlow_Api`**
+   - Perfil de execução: `CloudFlow_Api`
+   - Manipulador: `CloudFlow.Api`
+   - Gatilho: Rota `/{proxy+}` do API Gateway HTTP API
+   - Variáveis de Ambiente:
+     - `CloudProvider`: `Aws`
+     - `DemoModeEnabled`: `false` (ou `true`)
+     - `AWS_S3_BUCKET_NAME`: Nome do bucket S3
+     - `AWS_WEBSOCKET_SERVICE_URL`: URL de gerenciamento do WebSocket
+     - `AWS_WEBSOCKET_PUBLIC_URL`: URL pública de conexão do WebSocket
 
 
 ### 6. Publicação do Código das Lambdas
@@ -198,6 +243,7 @@ Execute o script de publicação na pasta `CloudFlow` para compilar e atualizar 
 ./deploy-lambda.ps1 CloudFlow_WebSocketDisconnect
 ./deploy-lambda.ps1 CloudFlow_DynamoDbMessageStream
 ./deploy-lambda.ps1 CloudFlow_SnsAuditEvent
+./deploy-lambda.ps1 CloudFlow_Api
 ```
 
 
@@ -239,4 +285,4 @@ Copie `CloudFlow/.env.example` para `CloudFlow/.env` e preencha as variáveis co
 - **Captura de Eventos de Dados:** Uso do **Cosmos DB Change Feed** (equivalente ao DynamoDB Streams) para reagir à inserção e alteração de mensagens
 - **Processamento Serverless:** Implementação de **Azure Functions** com gatilho em Change Feed (equivalente aos handlers de Lambda) para broadcast de mensagens
 - **Armazenamento de Arquivos:** Upload com URLs temporárias seguras via **Azure Blob Storage** com SAS Tokens (equivalente a S3 Presigned URLs)
-- **Mensageria e Filas:** Integração de **Azure Queue Storage / Service Bus** e **Event Grid** para exclusão assíncrona e publicação de eventos
+- **Mensageria e Eventos (Pub/Sub):** Integração com **Azure Service Bus Topics** ou **Event Grid** para distribuição desacoplada de eventos de auditoria (equivalente ao Amazon SNS)

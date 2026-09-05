@@ -26,10 +26,13 @@ if (-not $functionName) {
     exit 1
 }
 
-$projectLocation = Join-Path $PSScriptRoot "CloudFlow.Workers.Aws"
+$projectFolder = if ($functionName -match "Api") { "CloudFlow.Api" } else { "CloudFlow.Workers.Aws" }
+$projectLocation = Join-Path $PSScriptRoot $projectFolder
 $region = $envVars["AWS_REGION"]
 $accessKey = $envVars["AWS_ACCESS_KEY_ID"]
 $secretKey = $envVars["AWS_SECRET_ACCESS_KEY"]
+
+Write-Host "Iniciando deploy de $functionName usando o projeto $projectFolder..."
 
 dotnet lambda deploy-function $functionName `
     --project-location $projectLocation `
