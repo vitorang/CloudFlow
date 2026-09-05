@@ -66,13 +66,12 @@ public class WebSocketConnectionHandler : IDisposable
         await connectionRepository.Add(connectionId, CancellationToken.None);
 
         var auditDto = new AuditEventDto(
-            TopicName: SnsTopics.Users,
+            TopicName: PubSubTopics.Aws.Users,
             EventType: WebSocketEvents.UserConnected,
             OccurredAt: DateTime.UtcNow,
             Payload: new
             {
-                ConnectionId = connectionId,
-                request.RequestContext?.Identity?.SourceIp
+                ConnectionId = connectionId
             }
         );
 
@@ -99,7 +98,7 @@ public class WebSocketConnectionHandler : IDisposable
         await connectionRepository.Remove(connectionId, CancellationToken.None);
 
         var auditDto = new AuditEventDto(
-            TopicName: SnsTopics.Users,
+            TopicName: PubSubTopics.Aws.Users,
             EventType: WebSocketEvents.UserDisconnected,
             OccurredAt: DateTime.UtcNow,
             Payload: new

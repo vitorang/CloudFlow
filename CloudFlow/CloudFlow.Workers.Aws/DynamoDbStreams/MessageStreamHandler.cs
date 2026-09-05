@@ -121,7 +121,7 @@ public class MessageStreamHandler : IDisposable
         await webSocketNotificationService.Broadcast(webSocketMessage, cancellationToken);
 
         var auditDto = new AuditEventDto(
-            TopicName: SnsTopics.Messages,
+            TopicName: PubSubTopics.Aws.Messages,
             EventType: WebSocketEvents.MessageCreated,
             OccurredAt: DateTime.UtcNow,
             Payload: messageDto
@@ -152,7 +152,7 @@ public class MessageStreamHandler : IDisposable
         await webSocketNotificationService.Broadcast(webSocketMessage, cancellationToken);
 
         var auditDto = new AuditEventDto(
-            TopicName: SnsTopics.Messages,
+            TopicName: PubSubTopics.Aws.Messages,
             EventType: WebSocketEvents.MessageDeleted,
             OccurredAt: DateTime.UtcNow,
             Payload: new { Id = messageId }

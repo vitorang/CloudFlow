@@ -58,6 +58,18 @@ class _MessagesViewState extends State<_MessagesView> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   bool _isAuditPanelOpen = false;
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final configState = context.read<ConfigCubit>().state;
+      if (configState is ConfigLoaded && configState.config.demoModeEnabled) {
+        context.showSnackBar('Modo de demonstração: mensagens expiram em 1 hora.');
+      }
+    });
+  }
+
   void _toggleAuditPanel(bool isLargeScreen) {
     if (isLargeScreen) {
       setState(() {

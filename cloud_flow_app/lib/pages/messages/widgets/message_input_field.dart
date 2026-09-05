@@ -40,12 +40,28 @@ class _MessageInputFieldState extends State<MessageInputField> {
   final MessagesService _messagesService = MessagesService();
   final ThumbnailService _thumbnailService = ThumbnailService();
 
+  static const List<({int hours, String label})> _expirationOptions = [
+    (hours: 0, label: 'Nenhum'),
+    (hours: 1, label: '1 hora'),
+    (hours: 24, label: '1 dia'),
+    (hours: 168, label: '1 semana'),
+  ];
+
   bool _isSending = false;
   String _uploadStatus = '';
   bool _showUploadStatus = false;
   Timer? _statusTimer;
   _SelectedAttachment? _selectedAttachment;
   int? _selectedExpiresInHours;
+
+  @override
+  void initState() {
+    super.initState();
+    final configState = context.read<ConfigCubit>().state;
+    if (configState is ConfigLoaded && configState.config.demoModeEnabled) {
+      _selectedExpiresInHours = 1;
+    }
+  }
 
   @override
   void dispose() {
@@ -223,12 +239,8 @@ class _MessageInputFieldState extends State<MessageInputField> {
   }
 
   String _getExpirationTooltip() {
-    return switch (_selectedExpiresInHours) {
-      1 => 'Expira em 1 hora',
-      24 => 'Expira em 1 dia',
-      168 => 'Expira em 1 semana',
-      _ => 'Definir expiração',
-    };
+    final match = _expirationOptions.where((x) => x.hours > 0 && x.hours == _selectedExpiresInHours).firstOrNull;
+    return match != null ? 'Expira em ${match.label}' : 'Definir expiração';
   }
 
   @override
@@ -237,6 +249,8 @@ class _MessageInputFieldState extends State<MessageInputField> {
 
     return BlocBuilder<ConnectionCubit, WsConnectionState>(
       builder: (context, connectionState) {
+        final configState = context.read<ConfigCubit>().state;
+        final isDemoMode = configState is ConfigLoaded && configState.config.demoModeEnabled;
         final isConnected = connectionState is WsConnectionConnected;
         final hasExpiration = _selectedExpiresInHours != null;
         final hasAttachment = _selectedAttachment != null;
@@ -294,56 +308,28 @@ class _MessageInputFieldState extends State<MessageInputField> {
                         ),
                         PopupMenuButton<int>(
                           tooltip: _getExpirationTooltip(),
-                          enabled: isConnected && !_isSending,
+                          enabled: isConnected && !_isSending && !isDemoMode,
                           icon: Icon(
                             hasExpiration ? Symbols.timer : Symbols.timer,
                             color: hasExpiration ? Colors.orange : theme.colorScheme.onSurfaceVariant,
                           ),
-                          onSelected: (hours) {
-                            setState(() => _selectedExpiresInHours = hours > 0 ? hours : null);
+                          onSelected: (hours) => setState(() => _selectedExpiresInHours = hours == 0 ? null : hours),
+                          itemBuilder: (context) {
+                            return _expirationOptions.map((option) {
+                              final isSelected = (_selectedExpiresInHours ?? 0) == option.hours;
+
+                              return PopupMenuItem<int>(
+                                value: option.hours,
+                                child: Text(
+                                  option.label,
+                                  style: TextStyle(
+                                    color: isSelected ? theme.colorScheme.primary : null,
+                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                  ),
+                                ),
+                              );
+                            }).toList();
                           },
-                          itemBuilder: (context) => [
-                            PopupMenuItem<int>(
-                              value: 0,
-                              child: Text(
-                                'Nenhum',
-                                style: TextStyle(
-                                  color: _selectedExpiresInHours == null ? theme.colorScheme.primary : null,
-                                  fontWeight: _selectedExpiresInHours == null ? FontWeight.bold : FontWeight.normal,
-                                ),
-                              ),
-                            ),
-                            PopupMenuItem<int>(
-                              value: 1,
-                              child: Text(
-                                '1 hora',
-                                style: TextStyle(
-                                  color: _selectedExpiresInHours == 1 ? theme.colorScheme.primary : null,
-                                  fontWeight: _selectedExpiresInHours == 1 ? FontWeight.bold : FontWeight.normal,
-                                ),
-                              ),
-                            ),
-                            PopupMenuItem<int>(
-                              value: 24,
-                              child: Text(
-                                '1 dia',
-                                style: TextStyle(
-                                  color: _selectedExpiresInHours == 24 ? theme.colorScheme.primary : null,
-                                  fontWeight: _selectedExpiresInHours == 24 ? FontWeight.bold : FontWeight.normal,
-                                ),
-                              ),
-                            ),
-                            PopupMenuItem<int>(
-                              value: 168,
-                              child: Text(
-                                '1 semana',
-                                style: TextStyle(
-                                  color: _selectedExpiresInHours == 168 ? theme.colorScheme.primary : null,
-                                  fontWeight: _selectedExpiresInHours == 168 ? FontWeight.bold : FontWeight.normal,
-                                ),
-                              ),
-                            ),
-                          ],
                         ),
                         IconButton(
                           tooltip: 'Enviar mensagem',

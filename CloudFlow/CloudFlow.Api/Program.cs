@@ -34,7 +34,7 @@ public class Program
         });
 
         builder.Services.AddOpenApi();
-        builder.Services.AddCoreServices();
+        builder.Services.AddCoreServices(builder.Configuration);
         builder.Services.AddAwsInfrastructure(builder.Configuration);
 
         var app = builder.Build();

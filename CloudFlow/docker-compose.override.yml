@@ -5,6 +5,7 @@ services:
       - ASPNETCORE_HTTP_PORTS=8080
       - ASPNETCORE_HTTPS_PORTS=8081
       - CloudProvider=${CLOUD_PROVIDER}
+      - DemoModeEnabled=${DEMO_MODE_ENABLED}
       - AWS__Region=${AWS_REGION}
       - AWS__AccessKey=${AWS_ACCESS_KEY_ID}
       - AWS__SecretKey=${AWS_SECRET_ACCESS_KEY}

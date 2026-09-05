@@ -1,3 +1,5 @@
+using CloudFlow.Core.Configuration;
+using CloudFlow.Core.Constants;
 using CloudFlow.Core.Dtos;
 using CloudFlow.Core.Extensions;
 using CloudFlow.Core.Interfaces.Repositories;
@@ -7,12 +9,16 @@ namespace CloudFlow.Core.Services;
 
 public class MessageService(
     IMessageRepository messageRepository,
-    IStorageService storageService) : IMessageService
+    IStorageService storageService,
+    AppOptions appOptions) : IMessageService
 {
     private const int RecentMessagesLimit = 20;
 
     public async Task Create(CreateMessageDto dto, CancellationToken cancellationToken)
     {
+        if (appOptions.DemoModeEnabled)
+            dto = dto with { ExpiresInHours = AppDefaults.DemoModeExpirationInHours };
+
         var message = dto.ToEntity();
 
         if (!string.IsNullOrWhiteSpace(message.AttachmentKey))
