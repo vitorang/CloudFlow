@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/services.dart';
 
 class EnvironmentService {
-  static const String assetPath = 'assets/.env.json';
+  static const String assetPath = 'assets/env.json';
 
   static Future<Map<String, String>> loadEnvironments() async {
     try {

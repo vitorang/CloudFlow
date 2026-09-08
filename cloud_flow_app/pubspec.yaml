@@ -23,6 +23,7 @@ dependencies:
   media_kit_video: ^2.0.1
   media_kit_libs_video: ^1.0.7
   photo_view: ^0.15.0
+  web: ^1.1.1
 
 dev_dependencies:
   flutter_test:
@@ -32,4 +33,4 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/.env.json
+    - assets/env.json

@@ -4,6 +4,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_video_thumbnail_plus/flutter_video_thumbnail_plus.dart';
 import 'package:image/image.dart' as img;
 
+import 'package:cloud_flow_app/services/web_video_thumbnail_stub.dart'
+    if (dart.library.js_interop) 'package:cloud_flow_app/services/web_video_thumbnail_impl.dart';
+
 class ThumbnailService {
   bool canGenerateThumbnail(String fileExtension) {
     return isImage(fileExtension) || isVideo(fileExtension);
@@ -32,6 +35,14 @@ class ThumbnailService {
     }
 
     if (isVideo(cleanExt)) {
+      if (kIsWeb) {
+        return generateWebVideoThumbnail(
+          bytes: fileBytes,
+          fileExtension: cleanExt,
+          maxWidth: maxWidth,
+          maxHeight: maxHeight,
+        );
+      }
       return _generateVideoThumbnail(filePath: filePath, maxWidth: maxWidth, maxHeight: maxHeight, quality: quality);
     }
 

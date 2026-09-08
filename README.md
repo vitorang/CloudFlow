@@ -92,7 +92,7 @@ dotnet run --project CloudFlow.Api
 ```
 
 ### 4. Executar o Frontend (App Flutter)
-Copie o arquivo `.env.example.json` para `.env.json` dentro da pasta `assets` e defina as URLs de seu ambiente. Deixe vazia a URL de um ambiente para ele não ser listado.
+Copie o arquivo `env.example.json` para `env.json` dentro da pasta `assets` e defina as URLs de seu ambiente. Deixe vazia a URL de um ambiente para ele não ser listado.
 
 ```bash
 cd cloud_flow_app
@@ -103,7 +103,12 @@ Para gerar o pacote de publicação web:
 ```bash
 flutter build web --release
 ```
-*(Se for publicar em subdiretório, como no GitHub Pages, inclua a flag `--base-href "/CloudFlow/"`)*
+*(Se for publicar em subdiretório, como no GitHub Pages, inclua a flag `--base-href "/NomeDoRepositorio/"`)*
+
+Para publicar diretamente no GitHub Pages:
+```powershell
+./publish-web.ps1
+```
 
 ## Configurações da AWS
 > *Abandonai toda a esperança, ó vós que entrais.*
