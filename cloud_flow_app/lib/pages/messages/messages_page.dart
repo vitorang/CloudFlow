@@ -137,7 +137,38 @@ class _MessagesViewState extends State<_MessagesView> {
                     ],
                   )
                 : AppBar(
-                    title: const CloudFlowBrand(fontSize: 22),
+                    title: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const CloudFlowBrand(fontSize: 22),
+                        Builder(
+                          builder: (context) {
+                            final configState = context.watch<ConfigCubit>().state;
+                            if (configState is! ConfigLoaded || configState.config.environment.isEmpty) {
+                              return const SizedBox.shrink();
+                            }
+                            return Padding(
+                              padding: const EdgeInsets.only(left: 8),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.primaryContainer,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  configState.config.environment,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
                     actions: [
                       IconButton(
                         tooltip: 'Selecionar mensagens',

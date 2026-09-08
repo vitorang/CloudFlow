@@ -1,6 +1,7 @@
 import 'package:cloud_flow_app/cubits/config_cubit.dart';
 import 'package:cloud_flow_app/extensions/context_extensions.dart';
 import 'package:cloud_flow_app/pages/messages/messages_page.dart';
+import 'package:cloud_flow_app/services/environment_service.dart';
 import 'package:cloud_flow_app/widgets/brand.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -15,20 +16,49 @@ class ConnectPage extends StatefulWidget {
 }
 
 class _ConnectPageState extends State<ConnectPage> {
-  late final TextEditingController _urlController;
   late final TextEditingController _usernameController;
+  Map<String, String> _environments = const {};
+  String? _selectedEnvironmentKey;
+  bool _isLoadingEnvironments = true;
 
   @override
   void initState() {
     super.initState();
     final configCubit = context.read<ConfigCubit>();
-    _urlController = TextEditingController(text: configCubit.lastUrl);
     _usernameController = TextEditingController(text: configCubit.lastUsername);
+    _loadEnvironments();
+  }
+
+  Future<void> _loadEnvironments() async {
+    final envs = await EnvironmentService.loadEnvironments();
+    if (!mounted) return;
+
+    final configCubit = context.read<ConfigCubit>();
+    String? matchedKey;
+
+    if (configCubit.lastUrl.isNotEmpty) {
+      for (final entry in envs.entries) {
+        if (entry.value == configCubit.lastUrl) {
+          matchedKey = entry.key;
+          break;
+        }
+      }
+    }
+
+    final initialKey = matchedKey ?? (envs.isNotEmpty ? envs.keys.first : null);
+    if (initialKey != null) {
+      configCubit.selectEnvironment(initialKey);
+    }
+
+    setState(() {
+      _environments = envs;
+      _selectedEnvironmentKey = initialKey;
+      _isLoadingEnvironments = false;
+    });
   }
 
   @override
   void dispose() {
-    _urlController.dispose();
     _usernameController.dispose();
     super.dispose();
   }
@@ -53,17 +83,22 @@ class _ConnectPageState extends State<ConnectPage> {
   }
 
   void _onConnect() {
-    final urlText = _urlController.text.trim();
     final usernameText = _usernameController.text.trim();
 
     if (!_validateUsername(usernameText)) return;
 
-    if (urlText.isEmpty) {
-      context.showSnackBar('Informe um endereço válido.');
+    final selectedUrl = _selectedEnvironmentKey != null ? _environments[_selectedEnvironmentKey] : null;
+
+    if (selectedUrl == null || selectedUrl.isEmpty) {
+      context.showSnackBar('Selecione um ambiente válido.');
       return;
     }
 
-    context.read<ConfigCubit>().connect(urlText, username: usernameText);
+    context.read<ConfigCubit>().connect(
+      selectedUrl,
+      username: usernameText,
+      environment: _selectedEnvironmentKey ?? '',
+    );
   }
 
   @override
@@ -92,17 +127,30 @@ class _ConnectPageState extends State<ConnectPage> {
                   children: [
                     const CloudFlowBrand(fontSize: 36, textAlign: TextAlign.center),
                     const SizedBox(height: 32),
-                    TextField(
-                      controller: _urlController,
-                      enabled: !isLoading,
+                    DropdownButtonFormField<String>(
+                      key: ValueKey(_selectedEnvironmentKey),
+                      initialValue: _selectedEnvironmentKey,
+                      isExpanded: true,
                       decoration: const InputDecoration(
-                        labelText: 'Endereço',
-                        hintText: 'http://localhost:8080',
+                        labelText: 'Ambiente',
                         prefixIcon: Icon(Symbols.dns),
                         border: OutlineInputBorder(),
                       ),
-                      keyboardType: TextInputType.url,
-                      onSubmitted: (_) => _onConnect(),
+                      items: _environments.keys.map((environmentKey) {
+                        return DropdownMenuItem<String>(value: environmentKey, child: Text(environmentKey));
+                      }).toList(),
+                      onChanged: isLoading || _isLoadingEnvironments
+                          ? null
+                          : (value) {
+                              ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                              setState(() {
+                                _selectedEnvironmentKey = value;
+                              });
+                              if (value != null) {
+                                context.read<ConfigCubit>().selectEnvironment(value);
+                              }
+                            },
+                      hint: Text(_isLoadingEnvironments ? 'Carregando ambientes...' : 'Selecione um ambiente'),
                     ),
 
                     const SizedBox(height: 16),
@@ -117,12 +165,13 @@ class _ConnectPageState extends State<ConnectPage> {
                         border: OutlineInputBorder(),
                         counterText: '',
                       ),
-                      textInputAction: TextInputAction.next,
+                      textInputAction: TextInputAction.done,
+                      onSubmitted: (_) => _onConnect(),
                     ),
 
                     const SizedBox(height: 24),
                     FilledButton(
-                      onPressed: isLoading ? null : _onConnect,
+                      onPressed: isLoading || _isLoadingEnvironments ? null : _onConnect,
                       style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
                       child: isLoading
                           ? const SizedBox(

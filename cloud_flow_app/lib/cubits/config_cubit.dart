@@ -23,15 +23,17 @@ class ConfigError extends ConfigState {
 class ConfigCubit extends Cubit<ConfigState> {
   final http.Client _client;
   String lastUsername = '';
-  String lastUrl = 'http://localhost:8080';
+  String lastUrl = '';
+  String lastEnvironment = '';
 
   ConfigCubit({http.Client? client})
       : _client = client ?? http.Client(),
         super(ConfigInitial());
 
-  Future<void> connect(String rawUrl, {String username = ''}) async {
+  Future<void> connect(String rawUrl, {String username = '', String environment = ''}) async {
     lastUrl = rawUrl.trim();
     lastUsername = username.trim();
+    lastEnvironment = environment.trim();
     emit(ConfigLoading());
 
     try {
@@ -53,7 +55,11 @@ class ConfigCubit extends Cubit<ConfigState> {
         return;
       }
 
-      final config = AppConfig.fromJson(decoded, username: username);
+      final config = AppConfig.fromJson(
+        decoded,
+        username: username,
+        environment: environment,
+      );
 
       if (config.name != 'CloudFlow') {
         emit(ConfigError('O servidor informado não é um nó CloudFlow válido.'));
@@ -63,6 +69,13 @@ class ConfigCubit extends Cubit<ConfigState> {
       emit(ConfigLoaded(config));
     } catch (_) {
       emit(ConfigError('Não foi possível conectar ao endereço informado.'));
+    }
+  }
+
+  void selectEnvironment(String environment) {
+    lastEnvironment = environment.trim();
+    if (state is! ConfigLoaded) {
+      emit(ConfigInitial());
     }
   }
 
